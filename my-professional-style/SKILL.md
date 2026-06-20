@@ -1,5 +1,5 @@
 ---
-name: antonio-style
+name: my-professional-style
 description: >
   Apply Antonio Flores's personal professional style guide when creating or formatting
   any document, presentation, or file. ALWAYS use this skill when Antonio asks to create
