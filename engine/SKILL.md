@@ -1,17 +1,18 @@
 ---
 name: engine
-description: "Route work between execution engines — Claude and Antigravity (Gemini) as primary drivers, GLM-5.2 via Z.ai, and DeepSeek — and invoke each correctly. ALWAYS trigger when the user says /engine, \"delegate to GLM\", \"hand off to glm\", \"run this on glm\", \"use deepseek\", \"send to deepseek\", \"deepseek review\", \"cross-check\", \"multi-model\", \"which engine/model should run this\", \"switch engine\", or asks to run a task on another model/agent. Covers: in-session hand-off (shelling out to C:\\dev\\code-agent\\agent.py or using Antigravity native subagents), DeepSeek consult via MCP, and the pre-session toggle (launching Antigravity vs Claude Code). Gate state-changing or irreversible actions through /preflight first. deepseek_chat = v4-flash (fast); deepseek_reason = v4-pro (chain-of-thought)."
+description: "Route work between execution engines — Claude and Antigravity (Gemini) as primary drivers, GLM-5.2 via Z.ai, DeepSeek, and Hermes Agent — and invoke each correctly. ALWAYS trigger when the user says /engine, \"delegate to GLM\", \"hand off to glm\", \"run this on glm\", \"use deepseek\", \"send to deepseek\", \"deepseek review\", \"cross-check\", \"multi-model\", \"which engine/model should run this\", \"switch engine\", \"hand off to Antigravity\", \"delegate to Antigravity\", \"use hermes\", \"delegate to hermes\", or asks to run a task on another model/agent. Covers: in-session hand-off (MCP tools call_antigravity/call_claude, hermes_run, shelling out to C:\\dev\\code-agent\\agent.py, or using Antigravity native subagents), DeepSeek consult via MCP, and the pre-session toggle (launching Antigravity vs Claude Code). Gate state-changing or irreversible actions through /preflight first. deepseek_chat = v4-flash (fast); deepseek_reason = v4-pro (chain-of-thought)."
 ---
 
 # Engine Router
 
-Four execution engines are available. **Claude and Antigravity (Gemini) are the primary drivers** (depending on which CLI you launched) and are good at orchestration, planning, and reconciling. Use another engine deliberately — route on **stakes × complexity, not reflex.**
+Five execution engines are available. **Claude and Antigravity (Gemini) are the primary drivers** (depending on which CLI you launched) and are good at orchestration, planning, and reconciling. Use another engine deliberately — route on **stakes × complexity, not reflex.**
 
-There are exactly **three** ways to use another engine, and they are different:
+There are exactly **four** ways to use another engine, and they are different:
 
-1. **In-session hand-off (via script)** — The driver delegates a chunk of work to GLM by shelling out to `agent.py`, then reconciles the result.
-2. **In-session hand-off (via subagents)** — When Antigravity is the driver, it delegates work to Gemini subagents natively using the `invoke_subagent` tool.
-3. **Pre-session toggle** — Launch a different CLI entirely (Claude Code vs Antigravity) or use `cc-glm.ps1`. Chosen at launch, from a terminal — not from the chat box.
+1. **In-session hand-off (via MCP — bidirectional)** — The `engine-bridge` MCP server is registered in both Claude Code and Antigravity. Call `call_antigravity(task)` from Claude, or `call_claude(task)` from Antigravity. Antigravity must be running for `call_antigravity`.
+2. **In-session hand-off (via script)** — The driver delegates a chunk of work to GLM by shelling out to `agent.py`, then reconciles the result.
+3. **In-session hand-off (via subagents)** — When Antigravity is the driver, it delegates work to Gemini subagents natively using the `invoke_subagent` tool.
+4. **Pre-session toggle** — Launch a different CLI entirely (Claude Code vs Antigravity) or use `cc-glm.ps1`. Chosen at launch, from a terminal — not from the chat box.
 
 ## The engines
 
@@ -21,10 +22,34 @@ There are exactly **three** ways to use another engine, and they are different:
 | **Claude** | Native CLI | orchestration, planning, reconciling, most coding |
 | **GLM-5.2** (Z.ai) | `agent.py --provider zai`, or `cc-glm.ps1` | execution-heavy or cost-sensitive coding tasks |
 | **DeepSeek** | `mcp__deepseek__*` tools (in-session) | heavy reasoning, stats/methods validation, second opinion |
+| **Hermes Agent** | `hermes_*` tools via `hermes-peer` MCP | delegating tool-heavy tasks, scheduled cron jobs, kanban coordination |
 
 ---
 
-## 1. In-session hand-off (The primary CLI stays the driver)
+## 1. Bidirectional MCP bridge: `engine-bridge`
+
+The `engine-bridge` MCP server is registered in **both** Claude Code and Antigravity, enabling in-session handoff in either direction.
+
+| Direction | Tool | Requirement |
+|-----------|------|-------------|
+| Claude → Antigravity | `call_antigravity(task, timeout?)` | Antigravity app must be running |
+| Antigravity → Claude | `call_claude(task, workdir?)` | `claude` must be on PATH |
+
+**How it works (Claude → Antigravity):**
+The server uses CDP (Chrome DevTools Protocol) to find the running Antigravity page, type the task into the chat input, submit with Enter, and wait for the response to stop streaming. Response is returned as text.
+
+**How it works (Antigravity → Claude):**
+The server runs `claude -p "<task>" --output-format text` as a subprocess and returns stdout.
+
+**Caveats:**
+- `call_antigravity` delivers to whichever conversation is currently open in Antigravity. Open a dedicated "bridge" conversation to avoid mixing contexts.
+- Streaming responses can take up to `timeout` seconds (default 120s).
+- CDP port is fixed at 65143 (Antigravity's default). If it changes, update `cdp_send.js`.
+- Files: `C:\dev\engine-bridge-mcp\server.py` (MCP server), `C:\dev\engine-bridge-mcp\cdp_send.js` (CDP helper).
+
+---
+
+## 2. In-session hand-off (The primary CLI stays the driver)
 
 ### The autonomy model
 The driver sets a **clear objective + a safety boundary**, and either launches GLM with `--auto` via `agent.py`, or (if using Antigravity) spawns a native Gemini subagent. It lets the delegate run its full agentic loop end-to-end — one objective in, one report out. The driver does **not** supervise each step. Safety is enforced **in code**, not by hovering:
@@ -71,6 +96,13 @@ Use the MCP tools — the primary driver keeps driving and folds the result in.
 - `deepseek_chat` (v4-flash): synthesis, extraction, translation, code review. Accepts `prompt`, `max_tokens`, `system`, `temperature`. Use `temperature: 0` for validation/extraction; set a sharp reviewer `system` prompt.
 - Output is **capped at 8192 tokens** for both. Defaults truncate — always set `max_tokens` explicitly.
 - Strong-fit triggers: stats/methods validation for a real decision, cross-model consensus on a critical claim, multi-step reasoning where edge cases bite.
+
+### Delegate to Hermes Agent (execution / coordination)
+Use the `hermes-peer` MCP tools to dispatch tasks to the Hermes Agent.
+- `hermes_run(prompt, model?, toolsets?, skills?)`: Run a one-shot task and get the final response. Good for delegating research or tool-heavy work. Long-running tasks (up to ~10 mins) are supported.
+- `hermes_kanban_list` / `hermes_kanban_create`: Coordinate work across agents using the shared kanban board.
+- `hermes_cron_list`: View scheduled jobs.
+- Explore Hermes's own capabilities using `hermes_skills_list` and `hermes_skills_search`.
 
 ---
 
