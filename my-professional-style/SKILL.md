@@ -1,20 +1,20 @@
 ---
 name: my-professional-style
 description: >
-  Apply Antonio Flores's personal professional style guide when creating or formatting
-  any document, presentation, or file. ALWAYS use this skill when Antonio asks to create
-  a report, brief, one-pager, slide deck, meeting materials, or any formal output (even
-  if he doesn't say "style guide"). Trigger whenever the user says things like "make it
-  look professional", "follow my style", "apply my branding", "format this properly", or
-  any time a .docx, .pdf, or .pptx file is being produced for external or formal internal
+  Apply the user's professional style guide when creating or formatting any document,
+  presentation, or file. ALWAYS use this skill when the user asks to create a report,
+  brief, one-pager, slide deck, meeting materials, or any formal output (even if they
+  don't say "style guide"). Trigger whenever the user says things like "make it look
+  professional", "follow my style", "apply my branding", "format this properly", or any
+  time a .docx, .pdf, or .pptx file is being produced for external or formal internal
   audiences. The system is minimalist, credibility-first, monochromatic red, Helvetica
   Neue, white-background.
 ---
 
-# Antonio Flores: Professional Style Guide
+# Professional Style Guide
 
-This skill governs the visual and editorial standards for all professional files Antonio
-produces: reports, briefs, one-pagers, slide decks, meeting materials.
+This skill governs the visual and editorial standards for all professional files:
+reports, briefs, one-pagers, slide decks, meeting materials.
 
 **Design philosophy: minimalist, clean, credibility-first.**
 
@@ -363,6 +363,12 @@ Note: UPPERCASE in section and sub-headings applies to the heading label only, n
 **En-dash exception:** the en dash (`–`) is retained exclusively as the bullet list character, rendered in Signal Red. It is a typographic marker, not a punctuation device, and this exception does not apply to running text.
 
 ---
+
+**Headers and footnotes:**
+- Keep header bar labels and footer text factual and informational: organisation name, document type, date, version, audience
+- No grandiose claims, taglines, or hyperbolic language in any header or footer element
+- Footnotes state the source, date, and population of a claim; they do not editoralise or amplify it
+- Avoid superlatives ("groundbreaking", "unprecedented", "transformative") in any structural label
 
 **Writing style:**
 - Be direct and specific; avoid filler phrases ("It is important to note…", "It should be noted that…")
