@@ -34,12 +34,19 @@ All four must clear. One fail = block.
 
 For each dimension, reason explicitly:
 
-**Safe (≥ 0.999)**
-- What is the worst-case outcome if this goes wrong?
-- Is it reversible? (git reset, file restore, undo?) If yes, how easily?
-- Does it affect shared state (push, send, deploy, drop)?
-- Does it touch credentials, secrets, or production?
-- Sub-score: **Reversibility** (0–1). If Reversibility < 0.999, the Safe score cannot reach 0.999.
+**Safe (≥ 0.999)** — `Safe = min(Reversibility, Exposure)`. Both sub-scores must clear 0.999.
+
+- **Reversibility** (can the state be restored?): git reset, file restore, undo, re-deploy.
+  If Reversibility < 0.999, Safe cannot reach 0.999.
+- **Exposure** (does harm occur *before* any possible undo?): secrets read into context,
+  messages/emails sent, data pushed to an external system, logs/transcripts created.
+  A "reversible" send (you can send a correction) still leaks in the window before undo —
+  score Exposure on whether the harmful event happens at all, not whether you can patch it after.
+  Reading secrets into an LLM transcript is an Exposure event, not a read-only no-op.
+- **Blast radius + consent** raise the score: an irreversible action on a *specifically named,
+  single target the user explicitly requested* (e.g. "format drive E:") has a near-vanishing
+  plausible-failure scenario once confirmed, and can clear 0.999. A glob/pattern/wildcard
+  target (`rm *.log`, `DROP TABLE`) cannot — the failure scenario is "wrong file/table matched".
 
 **Clear (≥ 0.95)**
 - Is the goal specific enough to produce the right output without guessing?
@@ -96,20 +103,41 @@ On CLEARED (all pass), suppress the report and proceed directly.
 
 If the user explicitly acknowledges the constraint brief and instructs you to proceed anyway
 ("yes, proceed", "override", "I accept the risk"), treat this as raising the threshold bar
-and proceed — but log the accepted risk in one sentence before starting work.
+and proceed — but:
+1. Log the accepted risk in one sentence before starting work.
+2. Re-scope to the **named target** the user confirmed — do not widen to a glob/class/pattern
+   even if the override was general. "Yes, format it" means drive E:, not "format drives."
+3. If the block was on **Safe**, the override covers one execution, not a recurring/cron'd one.
+   A scripted or scheduled destructive action needs its own gate per run — temporal scope does
+   not carry over.
+4. If you have already overridden on the same dimension twice this session, surface it:
+   "This is the Nth override on Safe — the gate is doing little here; want me to retune the
+   threshold instead?" Override fatigue defeats the gate; name it when it starts.
 
 ## Auto-trigger checklist
 
 Run the gate silently before any of these action types:
 
-- `rm`, `del`, `Remove-Item`, `rmdir -rf`, `git clean` (file/dir deletion)
-- `git push`, `git push --force`, `git reset --hard`, `git rebase` (history rewrite)
-- `git commit --amend` on published commits
-- Sending email, Slack, Teams messages, GitHub comments/PRs
-- Database `DROP`, `TRUNCATE`, `DELETE` without `WHERE`
-- Infrastructure changes: CI/CD pipeline edits, permissions, environment variables in production
-- Any action writing to an external API with side effects (POST/PUT/DELETE)
+- File/dir deletion: `rm`, `del`, `Remove-Item`, `rmdir -rf`, `git clean`,
+  `Remove-Item -Recurse -Force`
+- Discarding uncommitted work: `git reset --hard`, `git checkout --`, `git restore`,
+  `git stash drop` (name the command, not just the abstract "overwriting uncommitted changes")
+- History rewrite / shared-state git: `git push`, `git push --force`, `git rebase`,
+  `git commit --amend` on published commits
+- Messaging / external posts: email, Slack, Teams, GitHub comments/PRs/issues,
+  Twitter/X, forum posts
+- Database: `DROP`, `TRUNCATE`, `DELETE` without `WHERE`, `ALTER`, migrations on prod
+- Infrastructure / IaC: CI/CD pipeline edits, permissions, prod env vars,
+  `terraform apply`/`destroy`, `kubectl delete`/`apply`, `helm uninstall`,
+  `aws s3 rm`/`gcloud`/`az` destructive subcommands, service stop/restart
+- Publishing / release: `npm publish`, `pip upload`, `docker push`, `git tag`+push,
+  GitHub Releases, any registry push
+- System state: registry edits, `schtasks`/cron create-or-alter, firewall rules,
+  `setx` machine env vars
+- Reading secrets into context: `.env`, key files, vault reads, connection strings
+  (see Exposure sub-score — read is NOT always safe)
 - Overwriting files that have uncommitted local changes
+- Any action writing to an external API with side effects (POST/PUT/DELETE)
 
 For purely local, read-only, or fully reversible actions, skip the check.
 
@@ -123,3 +151,30 @@ For purely local, read-only, or fully reversible actions, skip the check.
   user may choose to reprioritize.
 - A task that is Clear + Safe + Workable but low Value (< 0.90) is still a block. Doing
   the wrong thing efficiently is not a win.
+
+## Calibration anchors
+
+Use these to anchor scores instead of guessing. Each threshold gets concrete examples.
+
+**Safe 0.999** — cannot construct a plausible failure scenario:
+  - `git reset --hard` on a local branch where the user confirmed the lost changes are unwanted (reversible via reflog anyway): 0.999
+  - `Remove-Item` one named `.tmp` file the user pointed at: 0.999
+  - `git push --force` to your own solo feature branch: 0.80 (plausible: wrong remote, collaborator added since) → BLOCK
+  - `DROP TABLE` in prod: 0.50 (irreversible at scale) → BLOCK, force override
+
+**Safe — Exposure axis:**
+  - Read a `.env` into context: 0.70 (transcript/log disclosure surface) → BLOCK unless Value+Workable and user consents
+  - Send a test email to yourself: 0.85 (sent = leaked before undo) → BLOCK, light override
+
+**Clear 0.95** — goal specific enough to act without guessing:
+  - "Refactor the auth module": 0.50 (scope undefined) → BLOCK
+  - "Extract the JWT validation in auth.js:42 into a pure function, no behavior change": 0.97 → CLEAR
+
+**Workable 0.95** — tools, access, and capability present:
+  - "Debug the Kubernetes networking" with no cluster access in context: 0.60 → BLOCK
+  - "Run the test suite" with package.json visible: 0.98 → CLEAR
+
+**High Value 0.90** — net benefit clearly positive:
+  - 3-line readability refactor, no behavior change: 0.60 (cost > benefit) → BLOCK
+  - Fix a failing build: 0.95 → CLEAR
+  - Marginal 0.90–0.92: state it in the brief even on CLEARED so the user can reprioritize.
