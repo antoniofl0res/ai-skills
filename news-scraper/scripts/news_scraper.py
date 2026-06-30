@@ -233,12 +233,14 @@ def scrape_news(query, limit=10, days=7, detailed=False, source="google", api_ke
                     if pub_dt < cutoff_date:
                         continue
                         
-                    match = re.search(r'(?:articles|read)/([^?#]+)', link)
+                    match = re.search(r'(?:rss/articles|articles|read)/([^?#]+)', link)
                     article_id = match.group(1) if match else None
-                    
+                    # Normalize to /articles/ form so it redirects in browsers
+                    clean_link = f"https://news.google.com/articles/{article_id}" if article_id else link
+
                     google_articles.append({
                         'title': title,
-                        'google_link': link,
+                        'google_link': clean_link,
                         'article_id': article_id,
                         'pub_date': pub_dt,
                         'source': src_name,
@@ -347,11 +349,11 @@ def scrape_news(query, limit=10, days=7, detailed=False, source="google", api_ke
     
     for i, art in enumerate(processed_articles):
         date_str = art['pub_date'].strftime("%d %B %Y")
-        md.append(f"### {i+1}. {art['title']}")
+        md.append(f"### {i+1}. [{art['title']}]({art['url']})")
         md.append("")
         md.append(f"– **Source:** {art['source']} (via {art['engine']})")
         md.append(f"– **Published:** {date_str}")
-        md.append(f"– **Link:** [{art['source']} article]({art['url']})")
+        md.append(f"– **Link:** {art['url']}")
         
         if art['description'] and art['description'] != "Description not fetched.":
             clean_desc = re.sub(r'\s+', ' ', art['description']).strip()

@@ -35,3 +35,4 @@ The output report will follow these rules:
 2. **Bullets**: List items use the en-dash (–) character.
 3. **No Em-Dashes**: Em-dashes (—) are prohibited; colons or semicolons are used instead.
 4. **Tone**: Factual, evidence-based, and objective.
+5. **Links**: Every article title is a clickable hyperlink. When presenting output to the user, preserve all links exactly as produced by the script — do not paraphrase titles or drop URLs.
