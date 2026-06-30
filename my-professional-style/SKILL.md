@@ -86,7 +86,10 @@ differentiated by lightness and saturation. Neutrals are unchanged from the base
 
 ## Typography
 
-**Font family:** Helvetica Neue (fallback: Arial, then any system sans-serif). Single typeface only; no mixing.
+**Font family:** Helvetica Neue (fallback: Arial, then any system sans-serif). If Helvetica Neue
+is unavailable on the build machine, a two-typeface pairing is permitted: one clean sans-serif for
+headings (e.g. Bahnschrift) and a different clean sans-serif for body text (e.g. Calibri). Do not
+mix more than two typefaces in a single document.
 
 ### Document scale (DOCX / PDF — A4 or Letter)
 
@@ -114,6 +117,11 @@ differentiated by lightness and saturation. Neutrals are unchanged from the base
 | Caption / footnote | 8 pt | Regular | `#999999` | Sentence case |
 | Speaker notes | 10 pt | Regular | Mid Grey | — |
 | Footer | 8 pt | Regular | `#999999` | — |
+
+**In-room delivery variant:** for decks presented live on a projected screen to a physical room
+(rather than read on individual devices), increase body text to 16-18 pt and slide titles to
+24-28 pt bold. Apply this variant whenever the user describes the deck as for a live session,
+workshop, or in-person meeting rather than an emailed or self-read document.
 
 **Typography rules:**
 - Bold for structural emphasis (headings, tags); never italic
@@ -165,17 +173,42 @@ The header bar colour encodes audience and urgency. Choose one variant per docum
 | Urgent / Alert | `#4A0A18` Deep Crimson | SITREPs, field alerts, critical notices |
 | Academic / Teaching | `#C45C6E` Muted Rose | UFRGS materials, training content, lower-urgency register |
 
+**Full-bleed caution:** Muted Rose reads as clouded or faint at full-bleed scale (section dividers,
+cover slides, large fills). For those uses, prefer Signal Red (accents, dividers) or Deep Crimson
+(full-bleed backgrounds) even in the Academic/Teaching register. Reserve Muted Rose for header bars,
+thin accents, and secondary chart series, where its lower saturation is legible.
+
 **Header bar layout (all variants):**
 Full-width rectangle, 18 mm tall (documents) or ~15% slide height (presentations), flush to top.
 - Left: Organisation or author name; Helvetica-Bold 10 pt, White
 - Right: Document context label; Helvetica 8 pt, Pale Red
 - No logos or imagery inside the bar
 
+### Cover Table of Contents
+
+A sidebar rail on the cover or act-divider slides lists every section in a multi-act deck. Use only when the presentation has 3 or more distinct sections. For single-section or short decks, omit the rail entirely.
+
+- Rail sits on the right or left edge of the slide. Fill matches the cover background: `#F2F2F2` Light Grey, `#2B2B2B` Dark Grey, or `#4A0A18` Deep Crimson.
+- Each section appears as a short line: number + name. The active section is emphasised in `#C8102E` Signal Red on light backgrounds, or bold white on dark backgrounds. All other sections use a muted lower-contrast treatment.
+- This rail can appear on the cover and on each act-divider slide. It does not duplicate or replace the Header Bar Variant colour coding. The header bar remains one variant per document.
+
 ### Section Cards (Documents)
 Rounded rectangle, 3 mm corner radius, Light Grey fill, no stroke.
 - Left accent bar: Signal Red, 3 mm wide, full card height, 1.5 mm radius
 - Internal padding: 8 mm from accent bar edge to text
 - One card per major content section
+
+### Timeline / Roadmap
+
+Use for a sequence of dated milestones or phases, e.g. a product pipeline or rollout schedule. A horizontal centre line (`#D0D0D0`, 1 pt) with circular nodes (7-9mm) spaced along it. Node fill colour drawn from severity/status pill stops: use Signal Red for near-term, Muted Rose for mid-term, Deep Crimson for past or urgent. Short dotted connector leaders (`#D0D0D0`, distinct from solid 0.5pt dividers elsewhere, dotted exception justified as connector-only) run from a node up or down to a small callout card, alternating above/below the line to avoid collision. Each callout card is a compact Section Card: label + bold heading + 1-2 line body. May close with a full-width synthesis bar beneath (see Sandwich Synthesis Bars below).
+
+### Mirrored Two-Track Paired-Column Layout
+
+Two columns of equal width separated by the existing 0.5pt Rule Grey divider (per Grid & Columns). Each column topped by its own small header bar (reuses Category Pill or a slim solid-fill strip, not a full Header Bar variant since "one variant per document" is reserved for the page header). Matched rows of cards run down each column in lockstep (same row height across both columns at each row index) so each left card visually pairs with its right counterpart. Example uses: problem/response, current-state/target-state, capability/discussion-prompt. Do not use when the two sides are not genuinely paired item-by-item; use a single column instead.
+
+### Field-Labeled Comparison Card
+
+A Section Card variant for comparing 2-4 entities side by side (e.g. countries, products, options) on the same set of fields. Header: small status dot (5mm circle, colour from severity/status stops) + a coloured label pill (reuse Category Pills spec) on one line, then the entity's bold name below. Body: 2-4 internally labeled subsections, each: an UPPERCASE field label (use the guide's existing sub-heading UPPERCASE convention, not small caps) in Mid Grey, a thin Rule Grey divider beneath it, then 1-2 lines of body text.
 
 ### Category Pills / Tags
 
@@ -217,6 +250,14 @@ Light Grey background, 3 mm corner radius, 2 mm left accent bar in Signal Red.
 - Use sparingly for key takeaways, warnings, or critical data points
 - Font: Helvetica-Bold 9 pt, Dark Grey for label; Regular for body text
 - For critical callouts: use Whisper (`#FDF0F1`) background with Deep Crimson accent bar
+- Callout content must be self-contained and intelligible without external context. Do not anchor
+  a callout to a specific source document, dataset, or prior conversation the audience may not have
+  seen; state the transferable lesson or finding instead. If a callout currently reads as a private
+  reference, rewrite it as a generic, labelled principle before shipping.
+
+### Sandwich Synthesis Bars
+
+A full-width variant of a Callout Box, not a separate component. Reuses Callout Box tag semantics (FINDING, RECOMMENDATION, ALERT, NOTE) and severity colour stops. Geometry: full slide/page width, no side margins, solid fill (not Light Grey with accent bar). White or Pale Red text depending on fill darkness. Placement: above main content as a "key finding" framing, or below as a "so what / call to action" framing, or both bracketing one slide. Solid-fill full-width bar counts toward the existing "red fills must not cover more than ~15% of any page or slide" rule. Use sparingly; prefer Dark Grey or Light Grey fills with Signal Red text/accent for most cases, reserving solid Signal Red or Deep Crimson fills for the rare highest-urgency case.
 
 ---
 
@@ -306,7 +347,7 @@ The chart palette is monochromatic. Use stops in order; do not skip entries.
 
 **Icons:** Simple, consistent line-weight set (e.g. Feather or Material Symbols). Single colour: Dark Grey or Signal Red. No filled/solid decorative icons. Size: 16–20 pt in documents, 24–32 pt in presentations.
 
-**Photography:** Apply subtle Mid Grey overlay (40% opacity) to harmonise with palette. Avoid brightly coloured or heavily filtered images. No generic stock business photography. Prefer documentary or reportage aesthetics: images that establish context, show operational reality, or ground a claim. When human subjects appear, composition must preserve dignity and specificity. No staged imagery. No aspirational or abstract stock.
+**Photography:** Apply subtle Mid Grey overlay (40% opacity) to harmonise with palette. Avoid brightly coloured or heavily filtered images. No generic stock business photography. Prefer documentary or reportage aesthetics: images that establish context, show operational reality, or ground a claim. When human subjects appear, composition must preserve dignity and specificity. No staged imagery. No aspirational or abstract stock. Photography must never occlude header bars, titles, or other structural text. A full-bleed photo requires both the existing Mid Grey 40% overlay AND explicit z-ordering beneath all text and chrome layers. Treat any occlusion of legible text as a defect requiring the image be resized, cropped, or the overlay strengthened.
 
 **Diagrams & process flows:**
 - Boxes: Light Grey fill, 2 mm corner radius, no stroke or Rule Grey stroke
@@ -323,6 +364,25 @@ Every visual element must carry information. Decoration that does not encode mea
 - **Callout boxes encode urgency:** label callouts with a functional tag (FINDING, RECOMMENDATION, ALERT, NOTE) rather than generic language such as "key takeaway." Tag choice must match the severity semantics defined in the Category Pills table.
 - **Infographics:** acceptable only when data complexity justifies them. Must follow the chart series palette and accessibility rules. Never use infographics as substitutes for well-structured prose and a simple table.
 
+**Bullets versus infographics**
+
+A content slide is a candidate for conversion from bullets into a native shape-based layout when
+the underlying content has structure a bullet list flattens: parallel categories, a before/after
+contrast, a composite or multiplicative relationship, or a small reference table. Recognise these
+patterns and use the matching native layout instead of bulleting them:
+
+- Parallel categorical content (e.g. four propositions, four pillars) -> a card grid (2x2 or 1x4),
+  Light Grey fill, Signal Red accent per card
+- Before/after or magnitude contrasts (e.g. a metric widening under a stricter assumption) -> 
+  paired comparison bars sized to the real values, not decorative
+- Composite or multiplicative relationships (e.g. coverage x reach = impact) -> an equation-style
+  diagram: boxed terms connected by operator glyphs
+- Small reference or benchmark data -> an embedded table within the content area, not a bullet list
+
+Bullets remain correct for sequential, narrative, or genuinely flat content (a list of prompts, a
+set of independent action items). Convert only when the content's own structure calls for it; do
+not infographic-ify content that is just a flat list.
+
 ---
 
 ## Tone & Editorial Rules
@@ -330,6 +390,12 @@ Every visual element must carry information. Decoration that does not encode mea
 **Casing conventions:**
 
 The table below is authoritative. When generating or editing any text, verify each element against it before output. Resolve all conflicts in favour of this table, not the typography scale tables.
+
+**Standing override:** if the user has a global rule mandating sentence case for all titles and
+headings (checked in their CLAUDE.md or equivalent standing instructions), that rule takes
+precedence over the Title Case entries below for Document title and Slide title. Apply sentence
+case to titles whenever such an override is in force; this table's Title Case guidance is the
+default only in its absence.
 
 | Element | Case | Examples |
 |---|---|---|
