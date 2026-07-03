@@ -57,6 +57,7 @@ For each dimension, reason explicitly:
 - Do I have the right tools, permissions, and access?
 - Is the required information present in context or reliably fetchable?
 - Is the task within my capability boundary (not hallucination-prone domain)?
+- **Model and Engine Alignment**: When delegating work to another engine (e.g. via `agent.py` or script), verify that the target model is explicitly specified in the command (e.g., `--model glm-5.2` for Z.ai). If it relies on implicit defaults, the execution harness will fall back to `deepseek-v4-flash`, violating user intent. Block the run and require the explicit model flag.
 
 **High Value (≥ 0.90)**
 - What is the concrete benefit of completing this?

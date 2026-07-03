@@ -61,12 +61,13 @@ The reversibility **backstop** is a git-tracked workdir with a clean tree — an
 
 ### Delegate a task to GLM-5.2
 ```
-python C:/dev/code-agent/agent.py "<objective>" --provider zai --workdir <repo> --auto
+python C:/dev/code-agent/agent.py "<objective>" --provider zai --model glm-5.2 --workdir <repo> --auto
 ```
+- **Explicit Model Flag (`--model glm-5.2`) is mandatory** — You must explicitly call the model (e.g. `--model glm-5.2` for Z.ai/GLM) rather than relying on implicit defaults, as the background execution harness will otherwise default the underlying LLM routing to `deepseek-v4-flash`.
 - **`--auto` is mandatory** for delegated runs — the harness prompts via `input()` on state-changing tools, and neither the chat box nor the Bash tool can answer it, so it hangs without `--auto`.
 - Hand GLM the **objective and done-condition, not a step list** — let it plan. Good: "Make `npm test` pass in `src/auth/`; don't touch other modules." Bad: "open auth.js, find the bug, edit line 42…".
 - Run it for the user via Bash, then fold GLM's final report into the conversation.
-- Requires `ZAI_API_KEY` (set via `setx`; a `setx` value only reaches a **freshly launched** Claude Code — restart needed after setting it).
+- Requires `ZAI_API_KEY` (set via `setx`; a `setx` value only reaches a **freshly launched** Claude Code – restart needed after setting it).
 - GLM runs through Z.ai's Anthropic-compatible endpoint (`https://api.z.ai/api/anthropic`); the harness drops the Claude-only `thinking` param automatically.
 
 ### When to auto-delegate (fire without asking)
