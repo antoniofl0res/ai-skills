@@ -1,6 +1,6 @@
 ---
 name: engine
-description: "Route work between execution engines — Claude and Antigravity (Gemini) as primary drivers, GLM-5.2 via Z.ai, DeepSeek, and Hermes Agent — and invoke each correctly. ALWAYS trigger when the user says /engine, \"delegate to GLM\", \"hand off to glm\", \"run this on glm\", \"use deepseek\", \"send to deepseek\", \"deepseek review\", \"cross-check\", \"multi-model\", \"which engine/model should run this\", \"switch engine\", \"hand off to Antigravity\", \"delegate to Antigravity\", \"use hermes\", \"delegate to hermes\", or asks to run a task on another model/agent. Covers: in-session hand-off (MCP tools call_antigravity/call_claude, hermes_run, shelling out to C:\\dev\\code-agent\\agent.py, or using Antigravity native subagents), DeepSeek consult via MCP, and the pre-session toggle (launching Antigravity vs Claude Code). Gate state-changing or irreversible actions through /preflight first. deepseek_chat = v4-flash (fast); deepseek_reason = v4-pro (chain-of-thought)."
+description: "Route work between execution engines — Claude and Antigravity (Gemini) as primary drivers, GLM-5.2 via Z.ai, DeepSeek, and Hermes Agent — and invoke each correctly. ALWAYS trigger when the user says /engine, \"delegate to GLM\", \"hand off to glm\", \"run this on glm\", \"use deepseek\", \"send to deepseek\", \"deepseek review\", \"cross-check\", \"multi-model\", \"which engine/model should run this\", \"switch engine\", \"hand off to Antigravity\", \"delegate to Antigravity\", \"use hermes\", \"delegate to hermes\", or asks to run a task on another model/agent. Covers: in-session hand-off (MCP tools call_antigravity/call_claude, hermes_run, shelling out to C:\\dev\\code-agent\\agent.py for GLM or DeepSeek, or using Antigravity native subagents), and the pre-session toggle (launching Antigravity vs Claude Code). Gate state-changing or irreversible actions through /preflight first. DeepSeek runs through agent.py --provider deepseek (direct API, full agentic tool loop) — default model deepseek-v4-flash, use --model deepseek-v4-pro for search-heavy or safety-critical work."
 ---
 
 # Engine Router
@@ -10,7 +10,7 @@ Five execution engines are available. **Claude and Antigravity (Gemini) are the 
 There are exactly **four** ways to use another engine, and they are different:
 
 1. **In-session hand-off (via MCP — bidirectional)** — The `engine-bridge` MCP server is registered in both Claude Code and Antigravity. Call `call_antigravity(task)` from Claude, or `call_claude(task)` from Antigravity. Antigravity must be running for `call_antigravity`.
-2. **In-session hand-off (via script)** — The driver delegates a chunk of work to GLM by shelling out to `agent.py`, then reconciles the result.
+2. **In-session hand-off (via script)** — The driver delegates a chunk of work to GLM or DeepSeek by shelling out to `agent.py` (`--provider zai` or `--provider deepseek`), then reconciles the result. Both call their provider's API directly — no MCP server involved — and get the full agentic tool loop (bash/read/write/edit), not just a one-shot prompt/response.
 3. **In-session hand-off (via subagents)** — When Antigravity is the driver, it delegates work to Gemini subagents natively using the `invoke_subagent` tool.
 4. **Pre-session toggle** — Launch a different CLI entirely (Claude Code vs Antigravity) or use `cc-glm.ps1`. Chosen at launch, from a terminal — not from the chat box.
 
@@ -21,7 +21,7 @@ There are exactly **four** ways to use another engine, and they are different:
 | **Antigravity (Gemini)** | Native CLI, native subagents (`invoke_subagent`) | deep Google ecosystem integration, large context windows, native subagent routing |
 | **Claude** | Native CLI | orchestration, planning, reconciling, most coding |
 | **GLM-5.2** (Z.ai) | `agent.py --provider zai`, or `cc-glm.ps1` | execution-heavy or cost-sensitive coding tasks |
-| **DeepSeek** | `mcp__deepseek__*` tools (in-session) | heavy reasoning, stats/methods validation, second opinion |
+| **DeepSeek** | `agent.py --provider deepseek` (direct API, in-session) | heavy reasoning, stats/methods validation, second opinion, agentic tasks needing file/document handoff |
 | **Hermes Agent** | `hermes_*` tools via `hermes-peer` MCP | delegating tool-heavy tasks, scheduled cron jobs, kanban coordination |
 
 ---
@@ -90,13 +90,16 @@ Trust the backstop: clean + git-tracked means `git diff` shows the full change a
 2. **CLEARED** → re-launch the same task with `--allow-irreversible`. The guard still logs each irreversible op it runs. Do **not** leave `--allow-irreversible` on as a default — it's per-execution, and a scripted/recurring run needs its own gate each time.
 3. **BLOCKED** → surface the constraint brief to the user, or substitute a reversible alternative (e.g. commit to a branch instead of pushing).
 
-### Consult DeepSeek (reasoning / cross-check)
-Use the MCP tools — the primary driver keeps driving and folds the result in.
-
-- `deepseek_reason` (v4-pro, chain-of-thought): stats/methods validation, causal logic, multi-step proofs. Takes `prompt` + `max_tokens` **only**. Set `max_tokens ≥ 4000` — the trace and the final answer **share** the budget, so a low value returns an **empty `## Answer`**. No `system`/`temperature`.
-- `deepseek_chat` (v4-flash): synthesis, extraction, translation, code review. Accepts `prompt`, `max_tokens`, `system`, `temperature`. Use `temperature: 0` for validation/extraction; set a sharp reviewer `system` prompt.
-- Output is **capped at 8192 tokens** for both. Defaults truncate — always set `max_tokens` explicitly.
-- Strong-fit triggers: stats/methods validation for a real decision, cross-model consensus on a critical claim, multi-step reasoning where edge cases bite.
+### Consult DeepSeek (reasoning / cross-check / agentic tasks)
+```
+python C:/dev/code-agent/agent.py "<objective>" --provider deepseek --workdir <repo> --auto
+```
+- Same harness, same autonomy model as GLM (see above): reversible work runs free, irreversible ops (`push`, `rm -rf`, external POST, …) `ESCALATE` back to Claude for `/preflight` — gate the same way.
+- **Direct API call, no MCP server involved.** `agent.py` hits DeepSeek's OpenAI-compatible endpoint (`https://api.deepseek.com/v1`, override with `DEEPSEEK_BASE_URL`) itself and drives the full agentic tool loop (bash/read_file/write_file/edit_file) — unlike a one-shot MCP chat call, DeepSeek can read and write files directly, which is what makes document/code handoff possible.
+- **Default model `deepseek-v4-flash`** (statistically equivalent to pro across tool-calling exercises, ~35% faster, 3x cheaper on output tokens — validated 2026-06-29). Use `--model deepseek-v4-pro` for search-heavy multi-step tasks, safety-critical work, or when flash returns `stop` without calling tools on arithmetic/calculation tasks.
+- Requires `DEEPSEEK_API_KEY` set in the environment.
+- Strong-fit triggers: stats/methods validation for a real decision, cross-model consensus on a critical claim, multi-step reasoning where edge cases bite, or any task where DeepSeek needs to actually read/edit files rather than just answer a prompt.
+- For a quick text-only cross-check with no file access needed, a plain `agent.py --provider deepseek` run with a self-contained prompt (no workdir dependency) still works — it's the same call, just given a task that doesn't touch the filesystem.
 
 ### Delegate to Hermes Agent (execution / coordination)
 Use the `hermes-peer` MCP tools to dispatch tasks to the Hermes Agent.
@@ -126,7 +129,7 @@ C:\dev\code-agent\cc-glm.ps1          # GLM-5.2 session;  cc-glm.ps1 glm-4.6 for
 - **Delegated `agent.py` runs:** always `--auto` (see above).
 - **`--allow-irreversible`:** per-execution escape from the runtime guard; set only after `/preflight` clears the named irreversible action. The guard still logs each op it runs. Never a default.
 - **`--allow-payg-fallback`:** ZAI-only, per-execution. When the Coding Plan's 5-hour quota is spent (signalled as **HTTP 200 + `rate_limit_error` code 1308**, NOT a 429), `agent.py` spills over **mid-task, no state lost** to the credit-billed **General endpoint** (`https://api.z.ai/api/paas/v4`, OpenAI format, key `ZAI_PAYG_API_KEY`, model `ZAI_PAYG_MODEL`/default `glm-5.2`) — translating the in-flight history Anthropic→OpenAI. **Spends real cash balance**; logs the switch. The Anthropic endpoint `/api/anthropic` will NOT bill credits (Coding-Plan-only) — that's why spillover must change endpoints, not just keys. Off by default; opt in per run like `--allow-irreversible`, never standing. Live-verified 2026-06-22.
-- **DeepSeek `deepseek_reason`:** budget ≥ 4000 or the answer comes back empty; trace + answer share `max_tokens`.
+- **DeepSeek via `agent.py`:** always `--auto` too, same as GLM; requires `DEEPSEEK_API_KEY` (optionally `DEEPSEEK_BASE_URL` override). No separate reasoning/chat split like the old MCP tools — pick the model with `--model deepseek-v4-pro` when you need heavier chain-of-thought.
 - **Which engine is THIS session on?** Check `ANTHROPIC_BASE_URL`: contains `z.ai` → GLM; `api.anthropic.com` or unset → Claude. (Claude Code's own auth may not appear as a shell env var — the base URL is the reliable tell.)
 - **`ZAI_API_KEY` via `setx`** needs a Claude Code restart to be inherited (a running process keeps its launch environment).
 
@@ -143,4 +146,4 @@ Code-enforced autonomy on reversible work + a gated irreversible frontier = GLM 
 
 ## Fallback
 
-If an engine errors, say so plainly and fall back to Claude for the work (or to GLM's PAYG key via `--allow-payg-fallback`, if the block is a quota). Never let an outage block the task. Z.ai quota signals — verified live: the **5-hour Coding Plan limit** comes back as **HTTP 200 with a `rate_limit_error` body, code 1308** (NOT a 429); `code 1113` = balance exhausted. Detect by payload, not HTTP status — `agent.py`'s `is_quota_error()` does this. DeepSeek failure = timeout/empty answer.
+If an engine errors, say so plainly and fall back to Claude for the work (or to GLM's PAYG key via `--allow-payg-fallback`, if the block is a quota). Never let an outage block the task. Z.ai quota signals — verified live: the **5-hour Coding Plan limit** comes back as **HTTP 200 with a `rate_limit_error` body, code 1308** (NOT a 429); `code 1113` = balance exhausted. Detect by payload, not HTTP status — `agent.py`'s `is_quota_error()` does this. DeepSeek failure via `agent.py` = connection error after 3 retries (`sys.exit`) or an `OpenAICompatibleError` from the API — no quota-spillover path exists for DeepSeek, so on failure just fall back to Claude.
