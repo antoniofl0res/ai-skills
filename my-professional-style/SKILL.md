@@ -86,10 +86,7 @@ differentiated by lightness and saturation. Neutrals are unchanged from the base
 
 ## Typography
 
-**Font family:** Helvetica Neue (fallback: Arial, then any system sans-serif). If Helvetica Neue
-is unavailable on the build machine, a two-typeface pairing is permitted: one clean sans-serif for
-headings (e.g. Bahnschrift) and a different clean sans-serif for body text (e.g. Calibri). Do not
-mix more than two typefaces in a single document.
+**Font family:** Helvetica Neue is the brand and primary typeface. When Helvetica Neue is unavailable (e.g. on Windows build machines), the default pairing is Bahnschrift SemiBold for headings and Segoe UI for body, rather than falling back to Arial. Do not mix more than two typefaces in a single document.
 
 ### Document scale (DOCX / PDF — A4 or Letter)
 
