@@ -12,11 +12,13 @@ Use this skill to fetch, parse, and summarize recent news articles from the inte
 
 ## Usage Protocol
 
-To scrape news, invoke the Python command-line utility. Run the script using the following command structure:
+To scrape news, invoke the Python command-line utility shipped with this skill. Run the script from this skill's own `scripts/` directory:
 
 ```powershell
-python "C:\Users\Antonio Flores\.gemini\config\skills\news-scraper\scripts\news_scraper.py" --query "<search_topic>" [--source <google|newsapi|both>] [--api-key "<news_api_key>"] [--days <days>] [--limit <limit>] [--detailed] [--output "<output_path>"]
+python "<SKILL_DIR>\scripts\news_scraper.py" --query "<search_topic>" [--source <google|newsapi|both>] [--api-key "<news_api_key>"] [--days <days>] [--limit <limit>] [--detailed] [--output "<output_path>"]
 ```
+
+Where `<SKILL_DIR>` is the absolute path to this skill's directory (the folder containing this `SKILL.md`). Always run the script that lives alongside this `SKILL.md`; do not reference copies under other tool directories, which may be stale or absent.
 
 ### CLI Parameters
 
