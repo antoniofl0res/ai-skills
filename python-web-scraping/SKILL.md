@@ -1,262 +1,80 @@
 ---
 name: python-web-scraping
 description: >-
-  Perform web scraping using Python, BeautifulSoup, and Requests. Covers parsing local/remote HTML,
-  dot-navigation and tag-chaining, text cleaning, data export, interactive filtering, and scheduled loops.
+  Pre-flight gates and routing rules for web scraping with Python. Use whenever the user asks to
+  scrape, crawl, extract, or monitor data from a website or saved HTML — even casually ("pull the
+  prices from this page", "get all the listings into a CSV"). Enforces robots.txt compliance,
+  polite fetch discipline, and the static-HTML vs JSON-API vs JavaScript-rendering routing decision.
 ---
 
-# Python Web Scraping Guidelines
+# Python web scraping — gates and routing
 
-A guide to programmatically extracting structured data from web pages using Python, `Requests`, and `BeautifulSoup`. 
+You already know BeautifulSoup syntax. This skill exists because a few critical steps are
+reliably skipped under default operation. Follow them in order.
 
----
+## 1. Pre-flight gate (before the first fetch)
 
-## 1. Core Architecture & Browser Workflow
-
-Web scraping involves retrieving a web document and parsing its structure to extract data. Before writing code, use the browser developer tools to inspect the target page:
-* **The "Inspect" Workflow**: Right-click on any element on the page (e.g., a book title, a price, or a job card) and select **Inspect**.
-* **Identify Patterns**: Look for recurring structures. For example, if every book is wrapped in a `<div class="product_pod">` or every job is inside an `<li class="clearfix job-bx">`, that class name is the unique "magnet" you will target.
-
----
-
-## 2. Setup & Parser Selection
-
-Install the core libraries in your environment:
-```bash
-pip install requests beautifulsoup4 lxml
-```
-
-### Parser Selection: Why `lxml`?
-Always prefer `lxml` as the parsing engine over the default `html.parser`. It is written in C, making it significantly faster, and it is highly resilient when parsing broken or malformed HTML documents.
-
-### Standard Import Header
-Always include the following imports at the top of your scraping script:
-```python
-from bs4 import BeautifulSoup
-import requests
-import csv
-import time
-```
-
----
-
-## 3. Local File Parsing (Development & Testing)
-
-During development, save the HTML page locally to avoid making repetitive network requests and triggering rate limits.
+Check robots.txt and honor it — `Disallow` means abstain, `Crawl-delay` means wait that long
+between requests:
 
 ```python
-# Read a local HTML file
-with open('home.html', 'r', encoding='utf-8') as f:
-    content = f.read()
-
-# Initialize BeautifulSoup with the lxml parser
-soup = BeautifulSoup(content, 'lxml')
-
-# Prettify for debugging/inspection of the parsed structure
-print(soup.prettify())
+from urllib.robotparser import RobotFileParser
+rp = RobotFileParser()
+rp.set_url(f"{base_url}/robots.txt")
+rp.read()
+if not rp.can_fetch("*", target_url):
+    # Stop. Report to the user that robots.txt disallows this path — do not scrape it.
 ```
 
----
+Also consider: the site's terms of service, copyright on the data, and personal data (GDPR).
+Identify yourself with a descriptive User-Agent so operators can contact you.
 
-## 4. Remote Page Fetching
+## 2. Route before you parse
 
-To fetch live HTML, use `requests.get()`. Always inspect the HTTP response status code to handle blocks:
-```python
-url = "https://books.toscrape.com"
-response = requests.get(url)
+Look at what the page actually is before reaching for BeautifulSoup:
 
-# Status Code Validation
-if response.status_code == 200:
-    print("Successfully connected.")
-    html_text = response.text
-elif response.status_code == 403:
-    print("Access Denied (403 Forbidden). IP block or user-agent restriction encountered.")
-else:
-    print(f"Failed to fetch page. Status code: {response.status_code}")
-```
+- **Data already served as JSON?** Check the browser Network tab (or fetch the page and look for
+  `fetch`/XHR calls in its scripts). If the site loads data from a JSON endpoint, request that
+  endpoint directly — it's faster and far less fragile than parsing the DOM.
+- **Content rendered by JavaScript?** If the raw HTML from `requests` lacks the data you can see
+  in the browser (e.g. an empty `<div id="app">`), `requests` + BeautifulSoup cannot get it.
+  Use **Playwright** or **Selenium**. (Scrapy is NOT a JavaScript renderer — it's an HTTP
+  framework; it only renders JS when paired with Splash or a headless-browser middleware.)
+- **Plain static HTML?** requests + BeautifulSoup (`lxml` parser if installed, else
+  `'html.parser'` — it's a fine pure-Python fallback).
 
----
-
-## 5. DOM Traversal & Searching
-
-### Find vs. Find All
-* **`soup.find('tag')`**: Returns the *first* matching tag object, or `None`.
-* **`soup.find_all('tag')`**: Returns a *list* (ResultSet) of all matching tag objects. You **must** iterate over this list using a loop to process individual elements.
-
-### Targeting CSS Classes
-Because `class` is a reserved keyword in Python, BeautifulSoup uses **`class_`** (with an underscore) to match class attributes:
-```python
-# Find all course cards
-cards = soup.find_all('div', class_='card')
-```
-
-### Nested Relative Searching
-Instead of searching the global `soup`, query a parent tag directly to scope your search:
-```python
-for card in cards:
-    # Searches only inside the current card element
-    title_tag = card.find('h5')
-```
-
-### Tag Chaining (Dot-Navigation)
-You can walk down a known HTML tree hierarchy by chaining tags:
-```python
-# Traverses: parent -> child header -> child h2 -> child a tag
-link_tag = job.header.h2.a
-```
-
-### Attribute & Text Extraction
-* **Text**: Access the inner text of a tag using `.text`.
-* **Attributes**: Access attribute values (like links `href` or image sources `src`) using dictionary-style bracket notation:
-```python
-link = link_tag['href']
-text_content = link_tag.text
-```
-
----
-
-## 6. Text Cleaning & Token Extraction
-
-Scraped text is often cluttered with whitespace, tabs, and newlines. Use string methods to clean the data:
-* **`.strip()`**: Removes leading and trailing whitespace.
-* **`.replace(' ', '')`**: Removes all whitespace or replaces newlines (`\n`).
-* **`.split()`**: Splitting text into words to extract specific tokens (e.g., getting a price from a sentence).
+## 3. Fetch discipline
 
 ```python
-# Clean whitespace
-clean_title = title_tag.text.strip()
+import time, requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-# Extract price from a string like "Price: $20.00"
-raw_price = card.find('p', class_='price').text  # "Price: $20.00"
-price = raw_price.split('$')[-1]                 # "20.00"
+session = requests.Session()
+session.headers["User-Agent"] = "Mozilla/5.0 (compatible; MyScraper/1.0; contact@example.com)"
+session.mount("https://", HTTPAdapter(max_retries=Retry(
+    total=3, backoff_factor=0.5, status_forcelist=[429, 500, 502, 503, 504])))
+
+resp = session.get(url, timeout=30)
+resp.raise_for_status()          # never parse a failed response
+# ... parse ...
+time.sleep(1)                    # be polite: delay between successive page requests
 ```
 
----
+Never use a bare `except Exception` that swallows the traceback — catch specific request
+exceptions and let programming errors surface.
 
-## 7. Interactive Filtering & Saving Output
+## 4. Robustness rules
 
-### Interactive User Exclusion
-Prompt the user for skills or keywords they want to filter out, then conditionally skip matching elements:
-```python
-unfamiliar_skill = input("Enter a skill you do not know: ").strip().lower()
-
-for job in jobs:
-    skills = job.find('span', class_='skills').text.lower()
-    if unfamiliar_skill in skills:
-        # Skip this job listing
-        continue
-```
-
-### Exporting to CSV
-Use Python's built-in `csv` module to save structured data directly to a spreadsheet:
-```python
-with open('results.csv', 'w', newline='', encoding='utf-8') as f:
-    writer = csv.writer(f)
-    # Write header
-    writer.writerow(['Title', 'Price', 'Link'])
-    
-    for item in scraped_items:
-        writer.writerow([item['title'], item['price'], item['link']])
-```
-
-### Exporting to Numbered Files
-Use `enumerate()` to dynamically create separate text files inside a loop:
-```python
-for index, job in enumerate(jobs):
-    with open(f'posts/{index}.txt', 'w', encoding='utf-8') as f:
-        f.write(f"Company: {company}\nSkills: {skills}\n")
-```
-
----
-
-## 8. Scheduled Run Loops
-
-To run a scraper periodically (e.g., polling for new job listings every 10 minutes), wrap the execution in a loop with a delay:
-
-```python
-import time
-
-def run_scraper():
-    # Scraping logic goes here...
-    print("Scrape completed.")
-
-if __name__ == '__main__':
-    while True:
-        run_scraper()
-        # Sleep for 10 minutes (600 seconds)
-        time.sleep(600)
-```
-
----
-
-## 9. Handling Advanced Obstacles ("The Bosses")
-
-1. **Pagination**: Analyze how the page number changes in the URL (e.g., `page=2`). Loop through page indexes and format the URL dynamically.
-2. **JavaScript Rendering**: For pages where content loads dynamically via JS, standard `Requests` cannot read it. Use dynamic browser automation tools like **Playwright** or **Scrapy**.
-3. **IP Blocking & Rate Limiting**: Avoid getting banned by rotating user agents and using residential proxies (e.g., Data Impulse). Pass proxies directly to requests:
-```python
-proxies = {
-    'http': 'http://username:password@proxy_host:port',
-    'https': 'http://username:password@proxy_host:port',
-}
-response = requests.get(url, proxies=proxies)
-```
-
----
-
-## 10. Boilerplate Scraping Template
-
-Use this template as a starting point for writing structured Python scrapers:
-
-```python
-from bs4 import BeautifulSoup
-import requests
-import csv
-import time
-
-def scrape_jobs(unfamiliar_skill):
-    url = "https://example-jobs-site.com/search?q=python"
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-    
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            print(f"Failed to fetch data: HTTP {response.status_code}")
-            return
-        
-        soup = BeautifulSoup(response.text, 'lxml')
-        job_listings = soup.find_all('li', class_='job-listing-card')
-        
-        with open('scraped_jobs.csv', 'w', newline='', encoding='utf-8') as csv_file:
-            writer = csv.writer(csv_file)
-            writer.writerow(['Company', 'Skills', 'Link'])
-            
-            for index, job in enumerate(job_listings):
-                # Tag Chaining & Nested Searches
-                company = job.header.h3.text.strip()
-                skills = job.find('span', class_='job-skills').text.strip()
-                link = job.header.h3.a['href']
-                
-                # Interactive Exclusions
-                if unfamiliar_skill.lower() in skills.lower():
-                    continue
-                
-                # CSV Export
-                writer.writerow([company, skills, link])
-                
-                # Numbered File Export
-                with open(f'posts/{index}.txt', 'w', encoding='utf-8') as text_file:
-                    text_file.write(f"Company: {company}\nSkills: {skills}\nLink: {link}\n")
-                    
-        print("Jobs successfully scraped and saved.")
-        
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-if __name__ == '__main__':
-    unfamiliar = input("Enter skill to filter out: ").strip()
-    while True:
-        scrape_jobs(unfamiliar)
-        print("Waiting 10 minutes for the next run...")
-        time.sleep(600)
-```
+- **No unguarded dot-chains.** `job.header.h2.a` raises `AttributeError` the first time any link
+  in the chain is missing. Use `.find()`/`.select_one()` and check for `None`; skip or blank the
+  field for incomplete items instead of crashing the run.
+- **Create output directories** before path-templated writes: `os.makedirs(d, exist_ok=True)`.
+- **Normalize whitespace** with `re.sub(r'\s+', ' ', text).strip()` — `.replace(' ', '')` only
+  removes literal spaces, not tabs/newlines/non-breaking spaces.
+- **CSV export**: `open(path, 'w', newline='', encoding='utf-8')`.
+- **Proxies and credentials** come from environment variables, never hardcoded. Don't use free
+  public proxies — they can log or tamper with your traffic.
+- **During development**, fetch once and save the HTML locally; iterate on the saved file.
+- **No `while True` polling loops** without `try/except KeyboardInterrupt` for graceful shutdown —
+  and prefer an OS scheduler (cron/Task Scheduler) over a sleeping process.

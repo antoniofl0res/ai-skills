@@ -1,5 +1,6 @@
 import urllib.request
 import urllib.parse
+import urllib.error
 import xml.etree.ElementTree as ET
 import json
 import re
@@ -86,23 +87,42 @@ def fetch_meta_description(url):
             except Exception:
                 html_str = html_bytes.decode('latin-1', errors='ignore')
             
-            # Pattern 1: name="description" content="..."
-            m1 = re.search(r'<meta\s+[^>]*?name=["\']description["\']\s+[^>]*?content=["\'](.*?)["\']', html_str, re.IGNORECASE | re.DOTALL)
-            if not m1:
-                # content="..." name="description"
-                m1 = re.search(r'<meta\s+[^>]*?content=["\'](.*?)["\']\s+[^>]*?name=["\']description["\']', html_str, re.IGNORECASE | re.DOTALL)
-            
-            # Pattern 2: property="og:description" content="..."
-            m2 = re.search(r'<meta\s+[^>]*?property=["\']og:description["\']\s+[^>]*?content=["\'](.*?)["\']', html_str, re.IGNORECASE | re.DOTALL)
+            # Capture the content attribute value using a backreference to the
+            # SAME opening quote character, so a description that contains the
+            # other quote (e.g. content="She said 'hi'") is not truncated at the
+            # inner apostrophe. Delimiter may be " or '.
+            def _content_after(attr_match):
+                # find content=(["'])(.*?)\1 anywhere inside this <meta ...> tag
+                tag = attr_match.group(0)
+                cm = re.search(r'content=(["\'])(.*?)\1', tag, re.IGNORECASE | re.DOTALL)
+                return cm.group(2) if cm else None
+
+            # Find the whole <meta ...> tag whose name/property identifies the
+            # description we want, then extract its content value with matched
+            # delimiters. Prefer og:description, then name=description.
+            m2 = None
+            for tag_m in re.finditer(r'<meta\b[^>]*>', html_str, re.IGNORECASE):
+                tag = tag_m.group(0)
+                if re.search(r'(?:property|name)\s*=\s*["\']og:description["\']', tag, re.IGNORECASE):
+                    val = _content_after(tag_m)
+                    if val is not None:
+                        m2 = val
+                        break
+            m1 = None
             if not m2:
-                # content="..." property="og:description"
-                m2 = re.search(r'<meta\s+[^>]*?content=["\'](.*?)["\']\s+[^>]*?property=["\']og:description["\']', html_str, re.IGNORECASE | re.DOTALL)
+                for tag_m in re.finditer(r'<meta\b[^>]*>', html_str, re.IGNORECASE):
+                    tag = tag_m.group(0)
+                    if re.search(r'name\s*=\s*["\']description["\']', tag, re.IGNORECASE):
+                        val = _content_after(tag_m)
+                        if val is not None:
+                            m1 = val
+                            break
                 
             desc = None
             if m2:
-                desc = m2.group(1)
+                desc = m2
             elif m1:
-                desc = m1.group(1)
+                desc = m1
                 
             if desc:
                 # Clean up html entities and whitespace
@@ -145,6 +165,7 @@ def fetch_news_api(query, api_key, limit=10, days=7):
     
     try:
         with urllib.request.urlopen(req, timeout=10) as response:
+            status = response.getcode()
             data = json.loads(response.read().decode('utf-8'))
             if data.get('status') == 'ok':
                 articles = []
@@ -158,7 +179,12 @@ def fetch_news_api(query, api_key, limit=10, days=7):
                             pub_dt = datetime.datetime.now(datetime.timezone.utc)
                     except Exception:
                         pub_dt = datetime.datetime.now(datetime.timezone.utc)
-                        
+
+                    # Coerce naive datetimes to UTC for safe downstream
+                    # comparison and sorting.
+                    if pub_dt.tzinfo is None:
+                        pub_dt = pub_dt.replace(tzinfo=datetime.timezone.utc)
+
                     articles.append({
                         'title': art.get('title', 'Untitled'),
                         'url': art.get('url', ''),
@@ -169,7 +195,16 @@ def fetch_news_api(query, api_key, limit=10, days=7):
                     })
                 return articles
             else:
-                print(f"News API error: {data.get('message', 'Unknown error')}", file=sys.stderr)
+                print(f"News API error (HTTP {status}): {data.get('message', 'Unknown error')}", file=sys.stderr)
+    except urllib.error.HTTPError as he:
+        # Surface the HTTP status so a 429 rate limit, 401 bad key, or 5xx
+        # server error is distinguishable from a genuine empty result.
+        body = ''
+        try:
+            body = he.read().decode('utf-8', errors='ignore')[:200]
+        except Exception:
+            pass
+        print(f"News API HTTP {he.code} error: {body or he.reason}", file=sys.stderr)
     except Exception as e:
         print(f"Error fetching from News API: {e}", file=sys.stderr)
     return []
@@ -229,7 +264,14 @@ def scrape_news(query, limit=10, days=7, detailed=False, source="google", api_ke
                         pub_dt = email.utils.parsedate_to_datetime(pub_date_str)
                     except Exception:
                         pub_dt = datetime.datetime.now(datetime.timezone.utc)
-                        
+
+                    # parsedate_to_datetime can return a naive datetime when the
+                    # pubDate string lacks a TZ offset; coerce to UTC so the
+                    # comparison against the aware cutoff_date cannot raise
+                    # TypeError on a malformed item.
+                    if pub_dt.tzinfo is None:
+                        pub_dt = pub_dt.replace(tzinfo=datetime.timezone.utc)
+
                     if pub_dt < cutoff_date:
                         continue
                         
@@ -250,6 +292,7 @@ def scrape_news(query, limit=10, days=7, detailed=False, source="google", api_ke
             print(f"Error fetching Google News RSS: {e}", file=sys.stderr)
 
     # 2. Fetch News API Articles
+    newsapi_used = False
     if source in ["newsapi", "both"]:
         if not api_key:
             print("Warning: News API requested but no API key provided. Skipping News API.", file=sys.stderr)
@@ -257,6 +300,7 @@ def scrape_news(query, limit=10, days=7, detailed=False, source="google", api_ke
             print(f"Searching News API for: '{query}'...", file=sys.stderr)
             newsapi_articles = fetch_news_api(query, api_key, limit=limit * 2, days=days)
             print(f"Found {len(newsapi_articles)} entries from News API.", file=sys.stderr)
+            newsapi_used = bool(newsapi_articles)
             
     # If source was only newsapi but failed to run because of no key
     if source == "newsapi" and not api_key:
@@ -266,30 +310,53 @@ def scrape_news(query, limit=10, days=7, detailed=False, source="google", api_ke
     # 3. Merge & Deduplicate
     merged = []
     seen_urls = {}
-    
+
+    def _title_key(t):
+        return re.sub(r'[^a-zA-Z0-9]', '', t.lower())
+
+    def _day_key(dt):
+        return dt.astimezone(datetime.timezone.utc).date()
+
     # We process News API articles first because they already have direct URLs and summaries
     for art in newsapi_articles:
         norm = normalize_url(art['url'])
         seen_urls[norm] = art
         merged.append(art)
-        
-    # We process Google articles. If we already saw the URL or title, we skip it
+
+    # We process Google articles. Suppress a Google item only when it is a
+    # strong duplicate of an already-merged article: same publication day AND a
+    # near-identical title (one normalized title contains the other AND the
+    # shorter one is at least 60% of the longer one's length, so short generic
+    # titles like "Update" no longer suppress distinct follow-ups).
     for art in google_articles:
-        norm_title = re.sub(r'[^a-zA-Z0-9]', '', art['title'].lower())
-        title_dup = False
-        for seen in seen_urls.values():
-            seen_title_norm = re.sub(r'[^a-zA-Z0-9]', '', seen['title'].lower())
-            if seen_title_norm in norm_title or norm_title in seen_title_norm:
-                title_dup = True
-                break
-                
-        if title_dup:
+        norm = normalize_url(art.get('google_link', ''))
+        if norm and norm in seen_urls:
             continue
-            
+        norm_title = _title_key(art['title'])
+        art_day = _day_key(art['pub_date'])
+        is_dup = False
+        for seen in merged:
+            seen_title = _title_key(seen['title'])
+            if not seen_title or not norm_title:
+                continue
+            shorter, longer = sorted([seen_title, norm_title], key=len)
+            same_day = (_day_key(seen['pub_date']) == art_day)
+            contains = longer.startswith(shorter) or shorter in longer
+            length_ratio = len(shorter) / len(longer) if longer else 0
+            if same_day and contains and length_ratio >= 0.6:
+                is_dup = True
+                break
+
+        if is_dup:
+            continue
+
+        if norm:
+            seen_urls[norm] = art
         merged.append(art)
 
-    # Sort merged list by publication date descending
-    merged.sort(key=lambda x: x['pub_date'], reverse=True)
+    # Sort merged list by publication date descending; tiebreak on title for a
+    # stable, deterministic order regardless of insertion sequence.
+    merged.sort(key=lambda x: (x['pub_date'], _title_key(x['title'])), reverse=True)
     
     # Limit merged list
     selected = merged[:limit]
@@ -341,28 +408,29 @@ def scrape_news(query, limit=10, days=7, detailed=False, source="google", api_ke
     md.append("")
     md.append("## EXECUTIVE SUMMARY")
     md.append(f"– Generated automated news roundup for query: \"{query}\".")
-    md.append(f"– Source engine: {source.upper()} (API key used: {'Yes' if api_key else 'No'}).")
+    md.append(f"– Source engine: {source.upper()} (News API key used: {'Yes' if newsapi_used else 'No'}).")
     md.append(f"– Retrieved {len(processed_articles)} unique articles from the last {days} days.")
     md.append("")
     md.append("## NEWS ARTICLES")
     md.append("")
-    
+
     for i, art in enumerate(processed_articles):
         date_str = art['pub_date'].strftime("%d %B %Y")
         md.append(f"### {i+1}. [{art['title']}]({art['url']})")
         md.append("")
         md.append(f"– **Source:** {art['source']} (via {art['engine']})")
         md.append(f"– **Published:** {date_str}")
-        md.append(f"– **Link:** {art['url']}")
-        
+        # The article title above is itself a clickable hyperlink to the URL,
+        # so a redundant "Link:" bullet is omitted to keep the report concise.
+
         if art['description'] and art['description'] != "Description not fetched.":
             clean_desc = re.sub(r'\s+', ' ', art['description']).strip()
             clean_desc = clean_desc.replace('—', ';')
             md.append(f"– **Summary:** {clean_desc}")
         md.append("")
-        
+
     md.append("---")
-    md.append("*Disclaimer: Retrieved via automated script. All dates and sources verified. For professional reference only.*")
+    md.append("*Disclaimer: Retrieved via automated script. Publication dates reflect RSS/API metadata; original publisher sources should be verified before citation. For professional reference only.*")
     
     return "\n".join(md)
 
