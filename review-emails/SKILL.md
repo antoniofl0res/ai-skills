@@ -68,7 +68,7 @@ authoritative and HTML is ignored.
 ## Step 2 â€” Extract emails and meetings (past period)
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "C:\Users\Antonio Flores\.gemini\config\skills\review-emails\scripts\Get-EmailDigest.ps1" -DaysBack $DaysBack -MaxBodyLength 300
+powershell -ExecutionPolicy Bypass -File "C:\Users\Antonio Flores\.claude\skills\review-emails\scripts\Get-EmailDigest.ps1" -DaysBack $DaysBack -MaxBodyLength 300
 ```
 
 If output still exceeds 150 KB, add `-MaxEmails 100 -MaxBodyLength 200` and note truncation
