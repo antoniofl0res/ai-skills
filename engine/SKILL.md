@@ -59,6 +59,8 @@ The driver sets a **clear objective + a safety boundary**, and either launches G
 
 The reversibility **backstop** is a git-tracked workdir with a clean tree — any reversible change GLM makes is one `git restore`/`reset` away. That backstop is what buys the autonomy; **don't delegate into a dirty or untracked tree** (run `git stash`/commit first, or scope GLM to a fresh branch).
 
+**This is now code-enforced, not just a driver reminder.** `agent.py` runs `check_tree_state(workdir)` before starting any `--auto` run: if `workdir` isn't a git working tree, or `git status --porcelain` is non-empty, it exits immediately with the offending status and never calls the model. Bypass per-run with `--allow-dirty-tree` only after you've deliberately decided the mix-with-uncommitted-work risk is acceptable (e.g. the user's own dirty changes are unrelated files GLM won't touch) — same per-execution posture as `--allow-irreversible`, never a standing default. (Verified 2026-07-05.)
+
 ### Delegate a task to GLM-5.2
 ```
 python C:/dev/code-agent/agent.py "<objective>" --provider zai --model glm-5.2 --workdir <repo> --auto
@@ -128,6 +130,7 @@ C:\dev\code-agent\cc-glm.ps1          # GLM-5.2 session;  cc-glm.ps1 glm-4.6 for
 
 - **Delegated `agent.py` runs:** always `--auto` (see above).
 - **`--allow-irreversible`:** per-execution escape from the runtime guard; set only after `/preflight` clears the named irreversible action. The guard still logs each op it runs. Never a default.
+- **`--allow-dirty-tree`:** per-execution escape from the startup reversibility check. Without it, `--auto` refuses to start against a dirty or untracked `workdir` (before any model call). Only pass it when you've deliberately judged the mix-with-uncommitted-work risk acceptable — never a default.
 - **`--allow-payg-fallback`:** ZAI-only, per-execution. When the Coding Plan's 5-hour quota is spent (signalled as **HTTP 200 + `rate_limit_error` code 1308**, NOT a 429), `agent.py` spills over **mid-task, no state lost** to the credit-billed **General endpoint** (`https://api.z.ai/api/paas/v4`, OpenAI format, key `ZAI_PAYG_API_KEY`, model `ZAI_PAYG_MODEL`/default `glm-5.2`) — translating the in-flight history Anthropic→OpenAI. **Spends real cash balance**; logs the switch. The Anthropic endpoint `/api/anthropic` will NOT bill credits (Coding-Plan-only) — that's why spillover must change endpoints, not just keys. Off by default; opt in per run like `--allow-irreversible`, never standing. Live-verified 2026-06-22.
 - **DeepSeek via `agent.py`:** always `--auto` too, same as GLM; requires `DEEPSEEK_API_KEY` (optionally `DEEPSEEK_BASE_URL` override). No separate reasoning/chat split like the old MCP tools — pick the model with `--model deepseek-v4-pro` when you need heavier chain-of-thought.
 - **Which engine is THIS session on?** Check `ANTHROPIC_BASE_URL`: contains `z.ai` → GLM; `api.anthropic.com` or unset → Claude. (Claude Code's own auth may not appear as a shell env var — the base URL is the reliable tell.)
