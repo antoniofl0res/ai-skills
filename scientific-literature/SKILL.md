@@ -2,7 +2,8 @@
 name: scientific-literature
 description: >
   Orchestrates multi-database scientific literature search via a single self-contained MCP server:
-  scientific-databases (PubMed, Crossref, Europe PMC, OpenAlex, Semantic Scholar, bioRxiv/medRxiv).
+  scientific-databases (PubMed, Crossref, Europe PMC, OpenAlex, Semantic Scholar, bioRxiv/medRxiv,
+  and SciELO Preprints for Latin American / Ibero-American and Spanish/Portuguese-language work).
   Use this skill whenever the user wants to find papers, search for research, look up a DOI or PMID,
   check citations, map a research topic, get an author's publication profile, do a systematic or
   scoping review, retrieve full text of an open-access article, or surface recent preprints. Trigger
@@ -14,16 +15,16 @@ description: >
 
 # Scientific Literature Search
 
-You have access to **one MCP server** (`scientific-databases`) spanning six databases: PubMed,
-Crossref, Europe PMC, OpenAlex, Semantic Scholar, and bioRxiv/medRxiv preprints. Your job is to
-route queries intelligently, call the right tools (sometimes more than one in parallel), and return
-results in a clean, citation-ready format.
+You have access to **one MCP server** (`scientific-databases`) spanning seven sources: PubMed,
+Crossref, Europe PMC, OpenAlex, Semantic Scholar, bioRxiv/medRxiv preprints, and SciELO Preprints
+(Latin American / Ibero-American). Your job is to route queries intelligently, call the right tools
+(sometimes more than one in parallel), and return results in a clean, citation-ready format.
 
 ---
 
 ## Your tools
 
-### scientific-databases (PubMed · Crossref · Europe PMC · OpenAlex · Semantic Scholar · bioRxiv/medRxiv)
+### scientific-databases (PubMed · Crossref · Europe PMC · OpenAlex · Semantic Scholar · bioRxiv/medRxiv · SciELO Preprints)
 
 | Tool | Database | Best for |
 |---|---|---|
@@ -46,6 +47,7 @@ results in a clean, citation-ready format.
 | `search_published_preprints` | bioRxiv / medRxiv | Find preprints that have subsequently been published in a peer-reviewed journal |
 | `search_preprints_by_funder` | bioRxiv / medRxiv | Track preprints from a specific funding body by ROR ID (data from 2025-04-10 onward) |
 | `get_preprint_categories` | bioRxiv / medRxiv | List all bioRxiv category names (call once if unsure of category spelling) |
+| `search_scielo_preprints` | SciELO Preprints | Latin American / Ibero-American preprints (pt/es/en) NOT in bioRxiv/medRxiv, Europe PMC, or PubMed. Keyword filter matches across all language versions |
 
 **When to prefer PubMed over Europe PMC:**
 - User supplies a PMID directly.
@@ -59,6 +61,13 @@ filters by date range and category only. To find preprints on a topic, identify 
 first (call `get_preprint_categories`), then browse by date. For medRxiv (clinical/epidemiological
 sciences), set `server="medrxiv"`.
 
+**`search_scielo_preprints` works differently** — it harvests a date window via OAI-PMH and then
+filters by `keywords` **client-side across every language version** of the title, abstract, and
+subject terms (accent-insensitive), so an English query still matches a Portuguese or Spanish
+record. All terms must appear (AND). Because it harvests a window, keep the date range sensible
+(`recent_days` defaults to 60); widen it if a keyword search returns too few hits. Every result is a
+**preprint — not peer reviewed**; label them as such and check for a published version.
+
 ---
 
 ## Routing guide
@@ -69,9 +78,9 @@ sciences), set `server="medrxiv"`.
 → Run `search_europe_pmc` + `search_openalex` in parallel for breadth.
 → Add `search_semantic_scholar` for TL;DR summaries or AI/ML-adjacent topics.
 → Add `search_crossref` if citation counts or funder metadata are needed.
-→ Add `search_preprints` (server="medrxiv" for clinical topics) to catch
-  pre-publication findings, especially on fast-moving topics (antiretrovirals, vaccine trials,
-  outbreak epidemiology). Flag all preprints clearly as **[PREPRINT - not peer reviewed]**.
+→ Add `search_preprints` (server="medrxiv" for clinical/health topics, "biorxiv" otherwise) to
+  catch pre-publication findings, especially on fast-moving topics where peer review lags the
+  research front. Flag all preprints clearly as **[PREPRINT - not peer reviewed]**.
 
 ### User supplies a PMID
 → `get_pubmed_metadata` for the full record.
@@ -94,9 +103,28 @@ sciences), set `server="medrxiv"`.
 → From a PMCID directly: `get_pubmed_full_text` or `fetch_europe_pmc_fulltext` (either works).
 → For a preprint DOI: `get_preprint` returns the PDF URL directly.
 
+### Latin American / Ibero-American evidence (Spanish- or Portuguese-language literature)
+This is a **coverage gap you must actively work around**, not a single tool call. Most SciELO
+journal content *is* reachable — but only if you search for it correctly:
+→ **Run OpenAlex and Crossref with native-language query terms**, not just English. English-only
+  queries miss the bulk of the regional literature. Add the Spanish and Portuguese terms explicitly:
+  e.g. for dengue in pregnancy, also query `dengue AND (embarazo OR gravidez OR gestação)`.
+→ In `search_openalex`, combine a `language:es` or `language:pt` filter with the topic to surface
+  regional work directly (e.g. filter `language:pt` — Portuguese-language hits number in the tens
+  of thousands for common research topics).
+→ Add `search_scielo_preprints` for pre-publication regional findings (its keyword filter is already
+  cross-language, so English terms work).
+→ **LILACS caveat:** LILACS (BIREME/PAHO's VHL database) has **no lawful public API** — access is
+  explicitly restricted to the [bvsalud.org](https://bvsalud.org) portal interface. There is no tool
+  for it. For a Cochrane-style systematic review, where searching LILACS is formally recommended,
+  tell the user they must run that one search **manually** at bvsalud.org and export the results —
+  do not imply the automated search covered LILACS when it did not.
+
 ### Systematic or scoping review
 → Run `search_pubmed` + `search_europe_pmc` + `search_openalex` + `search_semantic_scholar` in parallel.
-→ Add `search_preprints` (server="medrxiv") to capture recent preprints in the relevant category.
+→ Add `search_preprints` (server="medrxiv") + `search_scielo_preprints` to capture recent preprints.
+→ For any topic with a Latin American evidence base, apply the native-language routing above
+  (Spanish/Portuguese terms in OpenAlex/Crossref) and surface the LILACS manual-search caveat.
 → Deduplicate by DOI before presenting results.
 → Offer to refine by year, OA status, publication type, or study design.
 
@@ -106,8 +134,10 @@ sciences), set `server="medrxiv"`.
 → Surface preprints clearly labelled, noting if a published version exists via
   `search_published_preprints`.
 
-### MSF, SAMU, neglected tropical diseases, humanitarian medicine, outbreak response
-→ These are high-priority domains — be thorough. Run PubMed + Europe PMC + medRxiv minimum.
+### Thoroughness on a high-stakes or comprehensive search
+→ When the user signals the search matters (a review, a decision, "be thorough", "everything on"),
+  run PubMed + Europe PMC + OpenAlex minimum, and add the relevant preprint sources.
+→ If the topic has a substantial non-English evidence base, apply the native-language routing above.
 → Prioritise OA papers and preprints; surface PDF links where available.
 
 ---
@@ -144,6 +174,12 @@ Return results as a numbered reference list. For each paper:
 - **Europe PMC field tags**: `AUTH:surname`, `JOURNAL:"lancet"`, `DISEASE:"histoplasmosis"`.
 - **bioRxiv category for clinical/HIV/epidemiology work**: use `server="medrxiv"` — this covers
   epidemiology, clinical trials, and public health preprints.
+- **Latin American topics: always add native-language terms.** OpenAlex/Crossref index most SciELO
+  journals, but an English-only query won't surface them — pass Spanish/Portuguese synonyms and/or a
+  `language:es`/`language:pt` OpenAlex filter. `search_scielo_preprints` is the only tool whose
+  keyword filter is already cross-language.
+- **Never imply LILACS was searched.** It has no API; if the task is a formal review, state plainly
+  that LILACS must be searched by hand at bvsalud.org.
 - **Preprint caution**: always label preprints clearly; mention if a published version was found or
   if it is still under review.
 - If a search returns zero results, widen the query (drop field terms, try synonyms) and retry once.
