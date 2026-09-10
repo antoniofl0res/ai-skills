@@ -8,7 +8,10 @@ description: >
   professional", "follow my style", "apply my branding", "format this properly", or any
   time a .docx, .pdf, or .pptx file is being produced for external or formal internal
   audiences. The system is minimalist, credibility-first, monochromatic red, Helvetica
-  Neue, white-background.
+  Neue, white-background. Two registers: the full system (default) and a Minimal
+  variant for lighter, text-led reading documents ("minimal", "lighter", "airy",
+  "easy on the eye"); never use the Minimal variant for external formal output,
+  live decks, or urgency-coded documents.
 ---
 
 # Professional Style Guide
@@ -28,10 +31,10 @@ Four governing principles:
 
 ## Critical Defaults: Apply These First
 
-Ten rules sufficient for most outputs. Read the full sections below only when edge cases arise.
+Eleven rules sufficient for most outputs. Read the full sections below only when edge cases arise.
 
 1. **Background**: always white (`#FFFFFF`); never coloured
-2. **Primary accent**: Signal Red `#C8102E`; structural roles only; max ~15% of any page or slide
+2. **Primary accent**: Signal Red `#C8102E`; structural roles only; max ~15% of any page or slide (~5% in the Minimal variant; see Minimal Variant)
 3. **Body text**: Helvetica Neue 9–10 pt, Mid Grey `#5A5A5A`
 4. **Headings**: Dark Grey `#2B2B2B`; section headings in UPPERCASE
 5. **Header bar**: choose variant by audience (see Header Variants below)
@@ -40,6 +43,7 @@ Ten rules sufficient for most outputs. Read the full sections below only when ed
 8. **Status semantics**: Deep Crimson = critical, Signal Red = alert, Muted Rose = flagged, Grey = OK/baseline
 9. **Vivid Red `#D94055`**: interactive/hover states only; never use in print or static documents
 10. **Palette is closed**: 13 named entries only; never introduce new colours
+11. **Register**: full system by default; switch to the Minimal variant (see Minimal Variant) for text-led reading documents or when the user asks for a lighter look. Minimal-variant exclusions (external formal output, live decks, urgency-coded documents) take precedence over trigger words
 
 ---
 
@@ -73,7 +77,7 @@ differentiated by lightness and saturation. Neutrals are unchanged from the base
 
 ### Colour Rules
 
-- Red fills must not cover more than ~15% of any page or slide
+- Red fills must not cover more than ~15% of any page or slide (~5% in the Minimal variant). The budget governs header bars, accent bars, pills, and synthesis-bar fills; chart series follow the chart series palette and are not counted against it
 - Red must never be used for running body text
 - Palette is closed; do not introduce new colours
 - All text/background combos must meet WCAG AA contrast (4.5:1 minimum)
@@ -174,6 +178,8 @@ The header bar colour encodes audience and urgency. Choose one variant per docum
 cover slides, large fills). For those uses, prefer Signal Red (accents, dividers) or Deep Crimson
 (full-bleed backgrounds) even in the Academic/Teaching register. Reserve Muted Rose for header bars,
 thin accents, and secondary chart series, where its lower saturation is legible.
+
+**Minimal variant:** when the Minimal register is selected, no header bar is drawn at all; use the text masthead specified in Minimal Variant.
 
 **Header bar layout (all variants):**
 Full-width rectangle, 18 mm tall (documents) or ~15% slide height (presentations), flush to top.
@@ -337,6 +343,35 @@ The chart palette is monochromatic. Use stops in order; do not skip entries.
 - Line → trends over time
 - Dot / scatter → correlations or distributions
 - **Avoid:** 3D charts, pie charts with more than 4 segments, overlapping area charts
+
+---
+
+## Minimal Variant (Light Register)
+
+A lighter expression of the same system, for outputs that are read rather than presented: internal memos and notes, analytical reports, academic handouts, long-form documents consumed on screen. It keeps the identity (white ground, Helvetica Neue, grey text hierarchy, Signal Red as the only working accent, closed palette) and removes the heavier chrome.
+
+**Use it when:** the user asks for a lighter look ("minimal", "airy", "clean", "easy on the eye"); the document is text-led and longer than a one-pager; or the audience reads rather than scans.
+
+**Exclusions take precedence over trigger words.** Do not use the Minimal variant for external formal output, decks presented live, SITREPs or anything urgency-coded, or one-pagers where the full system's structure aids scanning, even if a trigger word appears.
+
+All editorial rules (casing, punctuation, em-dash ban, numbers, file naming) apply unchanged. Only the elements below change; everything else inherits the base system, with one general override: **in the Minimal variant, any base component that calls for filled pills, Section Cards, solid-fill bars, or header fills renders instead as plain white, text, and hairline rules with severity dots** (Sandwich Synthesis Bars use Light Grey or Whisper fill with Signal Red text, never solid red).
+
+| Element | Base system | Minimal variant |
+|---|---|---|
+| Header (docs) | 18 mm full-bleed variant bar | Text masthead on the 18 mm top margin: organisation Helvetica-Bold 10 pt Dark Grey left, context label 8 pt Mid Grey right; 1 mm Signal Red rule across the full text column 3 mm below the masthead; content begins 6 mm below the rule |
+| Red budget | max ~15% of page/slide | max ~5%: hairlines, bullets, key figures; governs fills only, chart series follow the chart palette |
+| Section headings | UPPERCASE Dark Grey | Unchanged, but preceded by a 0.75 pt Signal Red rule, 4 mm long, 3 mm above the heading |
+| Section cards | Light Grey fill + red accent bar | Removed: plain text with 6 mm extra space above each section |
+| Callouts | Light Grey fill + 2 mm accent bar | Whisper `#FDF0F1` fill, no accent bar, 3 mm radius; UPPERCASE tag 7.5 pt Signal Red (FINDING / RECOMMENDATION / ALERT / NOTE per base severity semantics) |
+| Category pills / meta badges | Filled pills + badges | Removed: status becomes a 2 mm dot followed by the UPPERCASE label in Mid Grey 7.5 pt. Dot colours: Deep Crimson = critical, Signal Red = alert, Muted Rose = flagged, Mid Grey = OK/baseline, Dark Grey = closed/inactive; never a Light Grey dot on white |
+| Tables | Signal Red header fill, White text | White header row, Dark Grey Helvetica-Bold 9 pt, single 0.75 pt Signal Red rule below the header row only; data rows alternate White / Whisper `#FDF0F1`; all other borders Rule Grey 0.5 pt |
+| Charts | Series order: Signal Red, Deep Crimson, Muted Rose, Blush | For this register only, replace the base series order with Signal Red, Muted Rose, Blush, Rule Grey; do not use Deep Crimson as a chart series here; the 3+ series accessibility rule is unchanged; data labels are Dark Grey 8 pt, never Muted Rose, Blush, or Rule Grey (those stops fail AA contrast as text on white) |
+| Deck title block (pptx) | White title 28–32 pt on red bar | Dark Grey 28–32 pt title in the top safe zone (1.4 cm); 1 mm Signal Red rule immediately beneath the title text; no red bar; section labels become Signal Red UPPERCASE 10 pt text |
+| Body text (docs) | 9–10 pt, 1.15× line spacing | 10 pt, 1.3× line spacing, 8 pt space after paragraphs |
+| Captions, footnotes, footers | 7–8 pt, `#999999` | Mid Grey `#5A5A5A`: this register is text-led, so small text must hold AA contrast |
+| Bullets | Red en dash | Unchanged (signature element) |
+
+**Minimal does not mean sparse content:** the writing, quantification, sourcing, and accessibility rules are identical; only the visual weight drops.
 
 ---
 
