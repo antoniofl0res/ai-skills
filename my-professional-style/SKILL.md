@@ -8,10 +8,12 @@ description: >
   professional", "follow my style", "apply my branding", "format this properly", or any
   time a .docx, .pdf, or .pptx file is being produced for external or formal internal
   audiences. The system is minimalist, credibility-first, monochromatic red, Helvetica
-  Neue, white-background. Two registers: the full system (default) and a Minimal
+  Neue, white-background. Three registers: the full system (default), a Minimal
   variant for lighter, text-led reading documents ("minimal", "lighter", "airy",
-  "easy on the eye"); never use the Minimal variant for external formal output,
-  live decks, or urgency-coded documents.
+  "easy on the eye"), and an Ultraminimalist notch below it for the lightest, strictly
+  monochrome output ("ultraminimalist", "no colour", "black and grey only"); never use
+  the Minimal or Ultraminimalist variants for external formal output, live decks, or
+  urgency-coded documents.
 ---
 
 # Professional Style Guide
@@ -43,7 +45,7 @@ Eleven rules sufficient for most outputs. Read the full sections below only when
 8. **Status semantics**: Deep Crimson = critical, Signal Red = alert, Muted Rose = flagged, Grey = OK/baseline
 9. **Vivid Red `#D94055`**: interactive/hover states only; never use in print or static documents
 10. **Palette is closed**: 13 named entries only; never introduce new colours
-11. **Register**: full system by default; switch to the Minimal variant (see Minimal Variant) for text-led reading documents or when the user asks for a lighter look. Minimal-variant exclusions (external formal output, live decks, urgency-coded documents) take precedence over trigger words
+11. **Register**: full system by default; switch to the Minimal variant (see Minimal Variant) for text-led reading documents or when the user asks for a lighter look; one notch further, switch to the Ultraminimalist variant (see Ultraminimalist Variant) when the user asks for the lightest possible look or a strictly monochrome, black-and-grey output. Register exclusions (external formal output, live decks, urgency-coded documents) take precedence over trigger words
 
 ---
 
@@ -179,7 +181,7 @@ cover slides, large fills). For those uses, prefer Signal Red (accents, dividers
 (full-bleed backgrounds) even in the Academic/Teaching register. Reserve Muted Rose for header bars,
 thin accents, and secondary chart series, where its lower saturation is legible.
 
-**Minimal variant:** when the Minimal register is selected, no header bar is drawn at all; use the text masthead specified in Minimal Variant.
+**Minimal variant:** when the Minimal register is selected, no header bar is drawn at all; use the text masthead specified in Minimal Variant. The same applies when the Ultraminimalist variant is selected (see Ultraminimalist Variant).
 
 **Header bar layout (all variants):**
 Full-width rectangle, 18 mm tall (documents) or ~15% slide height (presentations), flush to top.
@@ -277,14 +279,14 @@ A full-width variant of a Callout Box, not a separate component. Reuses Callout 
 **Length guidelines:**
 - One-pager: 1 page (strictly)
 - Executive brief: 2–3 pages
-- Full report: no limit, but each section starts on a new page
+- Full report: no limit, but each section starts on a new page (sections flow continuously in the Ultraminimalist variant; see Ultraminimalist Variant)
 - Slide deck: 1 idea per slide; ~10–15 slides for a 15-min talk
 
 ---
 
 ## Bullet Points & Lists
 
-- Bullet character: en dash (–) in Signal Red
+- Bullet character: en dash (–) in Signal Red (Mid Grey in the Ultraminimalist variant; see Ultraminimalist Variant)
 - Bullet text font: Helvetica Regular, Mid Grey
 - Text indent: 4 mm from bullet character
 - Spacing between items: 2 mm; between groups: 3 mm
@@ -373,6 +375,45 @@ All editorial rules (casing, punctuation, em-dash ban, numbers, file naming) app
 
 **Minimal does not mean sparse content:** the writing, quantification, sourcing, and accessibility rules are identical; only the visual weight drops.
 
+**One notch further:** when the user wants the lightest register or strips colour entirely ("ultraminimalist", "no colour", "black and grey only"), apply the Ultraminimalist Variant (next section), which inherits Minimal and overrides the elements listed there.
+
+---
+
+## Ultraminimalist Variant (Lightest Register)
+
+One notch below the Minimal variant: the same text-led register stripped of all colour and its
+remaining chrome. The output uses the neutral scale only — Dark Grey, Mid Grey, Light Grey,
+Rule Grey, White, and `#999999` — with no red or any other hue anywhere. This overrides the
+Minimal variant's "Signal Red as the only working accent" and its red en-dash bullet signature,
+and the full-system rule that report sections start on a new page.
+
+**Use it when:** the user asks for "ultraminimalist", the lightest possible look, or a strictly
+monochrome output ("no colour", "black and grey only"), typically for text-led reading documents.
+
+**Exclusions carry down:** never for live decks, SITREPs, or urgency-coded documents, where
+colour carries state.
+
+Everything inherits the Minimal variant (which inherits the base system) except:
+
+| Element | Minimal variant | Ultraminimalist variant |
+|---|---|---|
+| Colour | Signal Red as the only working accent (max ~5%) | Monochrome: neutrals only; red budget is zero; Dark Grey `#2B2B2B` is the darkest stop (never pure black) |
+| Masthead rule | 1 mm Signal Red rule under the text masthead | 0.5 pt Rule Grey hairline in its place |
+| Section headings | Preceded by a 0.75 pt Signal Red rule | No rule; UPPERCASE Dark Grey; use ~16 pt space before section headings to mark section starts |
+| Bullets | Red en dash (signature element) | En dash in Mid Grey |
+| Callouts | Whisper `#FDF0F1` fill, UPPERCASE tag 7.5 pt Signal Red | No fill; 0.5 pt Rule Grey hairline above and below the callout; UPPERCASE tag bold Dark Grey 7.5 pt (severity is carried by the tag word alone: FINDING / RECOMMENDATION / ALERT / NOTE) |
+| Status dots | 2 mm severity dots in red-family stops | Monochrome: 2 mm dots in Dark Grey, with the UPPERCASE label carrying the severity semantics |
+| Tables | White header row with a Signal Red rule below; White / Whisper alternating rows | Booktabs style: 0.75 pt Rule Grey rule at the top of the table and below the header row, 0.5 pt Rule Grey rule at the bottom; no vertical borders, no inner row rules, no fills of any kind; numbers right-aligned |
+| Pagination (docs) | Full-report rule stands: each section starts on a new page | Removed: sections flow continuously with no forced page breaks |
+| Deck title block (pptx) | Dark Grey title with a 1 mm Signal Red rule beneath; Signal Red section labels | 0.5 pt Rule Grey hairline beneath the title; section labels Dark Grey UPPERCASE 10 pt |
+| Charts | Red series order with Muted Rose and Blush | Prefer no charts in this register; if data must be charted, use grey stops only (Dark Grey primary, Mid Grey, Light Grey, Rule Grey reference) with the 3+ series accessibility rule unchanged and Dark Grey data labels |
+
+Sandwich synthesis bars, if used, take a Light Grey fill with Dark Grey text and a 0.5 pt Rule
+Grey hairline above and below. Typographic scale, spacing, masthead and footer structure, and
+all editorial rules are unchanged from the Minimal variant. **Ultraminimalist does not mean
+sparse content:** the writing, quantification, sourcing, and accessibility rules are identical;
+only colour and chrome drop.
+
 ---
 
 ## Imagery & Iconography
@@ -458,7 +499,7 @@ Note: UPPERCASE in section and sub-headings applies to the heading label only, n
 | Parenthetical insertion | Comma pair or parentheses |
 | Abrupt break or contrast | Restructure the sentence |
 
-**En-dash exception:** the en dash (`–`) is retained exclusively as the bullet list character, rendered in Signal Red. It is a typographic marker, not a punctuation device, and this exception does not apply to running text.
+**En-dash exception:** the en dash (`–`) is retained exclusively as the bullet list character, rendered in Signal Red (Mid Grey in the Ultraminimalist variant). It is a typographic marker, not a punctuation device, and this exception does not apply to running text.
 
 ---
 
