@@ -40,6 +40,7 @@ Goal: derived metrics that survive an independent recomputation. Full definition
 
 - Compute every derived number with a script, never mental math. The median of an even-count list is the average of the two middle sorted values; mispicking the middle pair is the single most common error class in this pipeline.
 - Normalize before comparing: never compare raw plays between videos of different ages; compare plays-per-hour (velocity), and flag videos under two hours old as still in distribution.
+- Standard duration bands: group videos into `<30s` (short/reach), `30–90s` (mid-length core), and `90+ s` (long-form/deep explainers). Report video counts, mean plays, and mean per-video ER per band.
 - Watch the two classic confounds: format-vs-posting-slot (a "bad time slot" may just carry weak formats) and age-vs-performance (young videos look like underperformers until velocity-normalized).
 - Count by sorting, not by memory: top-N lists, zero-count lists, posting-cluster counts. Recount each against the raw table before publication; cluster counts must sum to the video total.
 - Small samples get small confidence: never state High confidence on a sub-pillar with fewer than four videos, and say so explicitly.
