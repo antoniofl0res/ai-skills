@@ -8,11 +8,14 @@ description: >
   professional", "follow my style", "apply my branding", "format this properly", or any
   time a .docx, .pdf, or .pptx file is being produced for external or formal internal
   audiences. The system is minimalist, credibility-first, monochromatic red, Helvetica
-  Neue, white-background. Three registers: the full system (default), a Minimal
+  Neue, white-background. Four registers: the full system (default), a Minimal
   variant for lighter, text-led reading documents ("minimal", "lighter", "airy",
-  "easy on the eye"), and an Ultraminimalist notch below it for the lightest, strictly
-  monochrome output ("ultraminimalist", "no colour", "black and grey only"); never use
-  the Minimal or Ultraminimalist variants for external formal output, live decks, or
+  "easy on the eye"), an Ultraminimalist notch below it for the lightest, strictly
+  monochrome house output ("ultraminimalist", "no colour", "black and grey only"),
+  and a Publication variant for plain, monochromatic peer-reviewed journal manuscript
+  submissions and preprints ("manuscript", "submission", "for submission",
+  "publication variant", "preprint"); never use the Minimal, Ultraminimalist, or
+  Publication variants for branded external formal output, live decks, or
   urgency-coded documents.
 ---
 
@@ -45,7 +48,7 @@ Eleven rules sufficient for most outputs. Read the full sections below only when
 8. **Status semantics**: Deep Crimson = critical, Signal Red = alert, Muted Rose = flagged, Grey = OK/baseline
 9. **Vivid Red `#D94055`**: interactive/hover states only; never use in print or static documents
 10. **Palette is closed**: 13 named entries only; never introduce new colours
-11. **Register**: full system by default; switch to the Minimal variant (see Minimal Variant) for text-led reading documents or when the user asks for a lighter look; one notch further, switch to the Ultraminimalist variant (see Ultraminimalist Variant) when the user asks for the lightest possible look or a strictly monochrome, black-and-grey output. Register exclusions (external formal output, live decks, urgency-coded documents) take precedence over trigger words
+11. **Register**: full system by default; switch to the Minimal variant (see Minimal Variant) for text-led reading documents or when the user asks for a lighter look; one notch further, switch to the Ultraminimalist variant (see Ultraminimalist Variant) when the user asks for the lightest possible house look or strictly black-and-grey output; switch to the Publication variant (see Publication Variant) when preparing a plain, monochromatic manuscript for journal submission or preprint. Register exclusions (branded external formal output, live decks, urgency-coded documents) take precedence over trigger words
 
 ---
 
@@ -181,7 +184,7 @@ cover slides, large fills). For those uses, prefer Signal Red (accents, dividers
 (full-bleed backgrounds) even in the Academic/Teaching register. Reserve Muted Rose for header bars,
 thin accents, and secondary chart series, where its lower saturation is legible.
 
-**Minimal variant:** when the Minimal register is selected, no header bar is drawn at all; use the text masthead specified in Minimal Variant. The same applies when the Ultraminimalist variant is selected (see Ultraminimalist Variant).
+**Minimal variant:** when the Minimal register is selected, no header bar is drawn at all; use the text masthead specified in Minimal Variant. The same applies when the Ultraminimalist variant is selected (see Ultraminimalist Variant). In the Publication variant, omit both the header bar and masthead rule; use only a plain running short title suppressed on Page 1 (see Publication Variant).
 
 **Header bar layout (all variants):**
 Full-width rectangle, 18 mm tall (documents) or ~15% slide height (presentations), flush to top.
@@ -279,14 +282,14 @@ A full-width variant of a Callout Box, not a separate component. Reuses Callout 
 **Length guidelines:**
 - One-pager: 1 page (strictly)
 - Executive brief: 2–3 pages
-- Full report: no limit, but each section starts on a new page (sections flow continuously in the Ultraminimalist variant; see Ultraminimalist Variant)
+- Full report: no limit, but each section starts on a new page (sections flow continuously in the Ultraminimalist and Publication variants; in the Publication variant, References start on a new page)
 - Slide deck: 1 idea per slide; ~10–15 slides for a 15-min talk
 
 ---
 
 ## Bullet Points & Lists
 
-- Bullet character: en dash (–) in Signal Red (Mid Grey in the Ultraminimalist variant; see Ultraminimalist Variant)
+- Bullet character: en dash (–) in Signal Red (Mid Grey in the Ultraminimalist variant; standard round bullet `•` in the Publication variant)
 - Bullet text font: Helvetica Regular, Mid Grey
 - Text indent: 4 mm from bullet character
 - Spacing between items: 2 mm; between groups: 3 mm
@@ -416,6 +419,43 @@ only colour and chrome drop.
 
 ---
 
+## Publication Variant (Manuscript Submission Register)
+
+A plain, strictly monochromatic register designed specifically for peer-reviewed journal
+manuscript submissions, preprints, and academic drafts (DOCX only; PDF only as a review
+proof). Whereas the Ultraminimalist variant strips colour while retaining the house masthead
+and editorial restrictions, the Publication variant conforms to standard biomedical and public
+health journal submission formatting so drafts can go straight into editorial portals without
+re-styling.
+
+**Use it when:** the user asks for a "manuscript", "submission", "journal submission", "for
+submission", "publication variant", or "preprint", or explicitly requests a plain,
+monochromatic manuscript layout.
+
+**Exclusions:** never use the Publication variant for branded MSF/institutional reports,
+operational briefs, SITREPs, slide decks, or one-pagers (use the Full or Minimal registers).
+
+Everything is plain, neutral monochrome (`#1A1A1A` primary text/headings; `#4A4A4A` / `#666666`
+muted grey only for metadata and running header/footer; zero colour, zero fills, zero decorative
+rules) with the following overrides relative to the Ultraminimalist variant:
+
+| Element | Ultraminimalist variant | Publication variant |
+|---|---|---|
+| Audience / purpose | House text-led reading documents | Peer-reviewed journal submissions and preprints (DOCX) |
+| Colour & fills | Neutral palette (`#2B2B2B`, `#5A5A5A`, `#F2F2F2`, `#D0D0D0`); Light Grey synthesis fills allowed | Strictly monochrome (`#1A1A1A` primary; `#4A4A4A` / `#666666` muted header/footer/meta); zero fills, shading, or borders |
+| Margins (A4 / Letter) | 22 mm left/right; 18 mm top; 14 mm bottom | 25.4 mm (1 inch) on all four sides |
+| Typography & spacing | Bahnschrift SemiBold + Segoe UI (or Helvetica Neue); 10 pt body, 1.3× line spacing, 8 pt after | `Segoe UI 11 pt` body (or `Times New Roman 12 pt` when a target journal specifies serif); **1.5× line spacing** (`2.0×` if requested by journal), left-aligned (ragged right), 6 pt after; Title 15 pt bold, H1 12 pt bold, H2 11 pt bold |
+| Heading casing | UPPERCASE Dark Grey | **Sentence case** for Title, H1, and H2 (preserving acronyms and proper nouns) |
+| Italics & punctuation | House ban on italics and em-dashes stands | **Scholarly typography restored:** italics permitted for journal/book titles, taxonomic binomials, and manuscript emphasis; standard manuscript punctuation permitted |
+| Header & footer | Text masthead + 0.5 pt Rule Grey hairline; footer with 0.5 pt top rule | No masthead and no horizontal rules; plain right-aligned running short title in header (`9 pt` `#666666`, suppressed on Page 1 via `titlePage`); plain footer (`8.5 pt` `#666666`) with version/date left and `Page X of Y` right |
+| Title block & metadata | Minimal status dot + title | Plain italic article-type label (`Narrative review`, `Original article`), sentence-case title, and document metadata (add `Authors / Affiliations` only if provided or requested) |
+| Pagination | Continuous flow throughout | Abstract and Keywords flow into Section 1 continuously (or Page 1 title block if author list is included); body sections flow continuously with `keepNext`; **References start on a new page** |
+| Bullets | Mid Grey en dash (`–`) | Standard round bullet (`•`) with clean hanging indent |
+| Tables & figures | Booktabs style with `#D0D0D0` rules | Academic booktabs (`0.75 pt` top and header-bottom rules, `0.5 pt` bottom rule in `#1A1A1A`/`#666666`, no fills, no vertical borders); plain bold caption above table |
+| References | Standard house list | Vancouver numbered bibliography (or target journal style) at `10 pt`, `1.15×` line spacing, hanging indent (`480` DXA) |
+
+---
+
 ## Imagery & Iconography
 
 **Icons:** Simple, consistent line-weight set (e.g. Feather or Material Symbols). Single colour: Dark Grey or Signal Red. No filled/solid decorative icons. Size: 16–20 pt in documents, 24–32 pt in presentations.
@@ -484,13 +524,13 @@ default only in its absence.
 | Header bar subtitle | Sentence case | "Southern Africa Medical Unit" |
 | Footer text | Sentence case | "MSF SAMU | Internal brief" |
 
-Note: UPPERCASE in section and sub-headings applies to the heading label only, never to running body text that follows it.
+Note: UPPERCASE in section and sub-headings applies to the heading label only, never to running body text that follows it. **Publication variant override:** use sentence case for all section headings and sub-headings in the Publication variant.
 
 ---
 
 **Punctuation rules:**
 
-**No em-dashes.** The em-dash (`—`) is not used anywhere in this style system. When drafting or editing, replace it as follows:
+**No em-dashes (Full, Minimal, and Ultraminimalist variants).** The em-dash (`—`) is not used anywhere in the house style registers. When drafting or editing in those registers, replace it as follows:
 
 | Em-dash function | Replacement |
 |---|---|
@@ -500,6 +540,8 @@ Note: UPPERCASE in section and sub-headings applies to the heading label only, n
 | Abrupt break or contrast | Restructure the sentence |
 
 **En-dash exception:** the en dash (`–`) is retained exclusively as the bullet list character, rendered in Signal Red (Mid Grey in the Ultraminimalist variant). It is a typographic marker, not a punctuation device, and this exception does not apply to running text.
+
+**Publication variant punctuation & italics:** standard academic typography (italics for journal/book titles and taxonomic names, standard round bullets `•`, and standard manuscript punctuation) is permitted in the Publication variant.
 
 ---
 
